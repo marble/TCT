@@ -160,6 +160,7 @@ Run a toolchain::
    $ tct run \
       RenderDocumentation \
       --config makedir /home/mbless/HTDOCS/github.com/TYPO3-Documentation/TYPO3/Reference/CoreApi.git.make
+      --config rebuild_needed 1
 
    # Find all data and the result(s) in `temp_home`
 
