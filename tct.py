@@ -1,5 +1,4 @@
 from __future__ import print_function
-from __future__ import print_function
 import click
 import ConfigParser
 import cStringIO as StringIO
@@ -131,7 +130,23 @@ def clean(dry_run):
     verbose = FACTS['verbose']
     temp_home = FACTS['temp_home']
 
-    if dry_run:
+    # sanity check
+    ok = True
+    parts = temp_home.split(os.path.sep)
+
+    if ok and not temp_home.startswith(os.path.sep):
+        ok = False
+    if ok and len(parts) < 3:
+        ok = False
+    if ok and parts[1] not in ['temp', 'tmp', 'home']:
+        ok = False
+    if ok and parts[1] == 'home' and len(parts) < 4:
+        ok = False
+
+    if not ok:
+        click.echo("CLEAN doesn't dare deleting in '%s':" % temp_home)
+
+    elif ok and dry_run:
         click.echo("CLEAN will remove in '%s':" % temp_home)
         cnt = 0
         for top, dirs, files in os.walk(temp_home):
@@ -148,7 +163,7 @@ def clean(dry_run):
         if cnt == 0:
             click.echo('   Nothing.')
 
-    if live_run:
+    elif ok and live_run:
         if verbose:
             click.echo("CLEAN is removing in '%s':" % temp_home)
         cnt = 0
@@ -170,6 +185,8 @@ def clean(dry_run):
         if cnt == 0:
             if verbose:
                 click.echo('   Nothing.')
+    else:
+        pass
 
 
 @cli.command()
