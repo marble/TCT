@@ -411,7 +411,7 @@ def remove(key, section):
 def set(key, value, section):
     """Set VALUE for KEY in configuration file."""
 
-    if not section in tctconfig.sections():
+    if not section in tctconfig_user.sections():
         tctconfig_user.add_section(section)
     tctconfig_user.set(section, key, value)
     with file(tctconfig_file_user,'w') as f2:
