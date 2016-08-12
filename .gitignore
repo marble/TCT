@@ -87,3 +87,7 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+*NOT_VERSIONED*
+.idea
+/venv
