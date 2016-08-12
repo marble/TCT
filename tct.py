@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import sys
 
-from tctlib import finder, data2json, readjson, writejson, logstamp_finegrained
+from tctlib import finder, data2json, readjson, writejson, logstamp, logstamp_finegrained
 
 PY3 = sys.version_info[0] == 3
 
