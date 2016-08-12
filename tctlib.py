@@ -25,13 +25,14 @@ if 0 and 'for example':
         pass
 
 
-def msecs():
+def msecs(unixtime=None):
     "Return number of msec of current time as string."
 
-    # >> time.time()
+    if unixtime is None:
+        unixtime = time.time()
     # 1469006952.733832
     # return '1469006952733'
-    return str(int(time.time() * 1000))
+    return str(int(unixtime * 1000))
 
 def logstamp(unixtime=None, fmt='%Y-%m-%d %H:%M'):
     "Return a timestamp suitable for logging like '2016-07-26 21:05'"
@@ -39,6 +40,11 @@ def logstamp(unixtime=None, fmt='%Y-%m-%d %H:%M'):
     if unixtime is None:
         unixtime = time.time()
     return datetime.datetime.fromtimestamp(unixtime).strftime(fmt)
+
+def logstamp_finegrained(unixtime=None, fmt='%Y-%m-%d_%H-%M-%S_%f'):
+    "Return fine grained timestamp like `2016-07-26_21-05-59_888999`."
+
+    return logstamp(unixtime, fmt=fmt)
 
 
 

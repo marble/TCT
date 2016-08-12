@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import sys
 
-from tctlib import finder, data2json, readjson, writejson, msecs, logstamp
+from tctlib import finder, data2json, readjson, writejson, logstamp_finegrained
 
 PY3 = sys.version_info[0] == 3
 
@@ -80,7 +80,7 @@ def cli(toolchains_home, config, verbose, temp_home, dump_params):
     FACTS['verbose'] = verbose
     FACTS['temp_home'] = os.path.abspath(os.path.normpath(temp_home))
     FACTS['dump_params'] = dump_params
-    FACTS['run_id'] = msecs()
+    FACTS['run_id'] = logstamp_finegrained()
     for key, value in config:
         FACTS[key] = value
     FACTS['binabspath'] = os.path.split(os.path.abspath(os.path.normpath(sys.argv[0])))[0]
