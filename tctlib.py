@@ -24,6 +24,11 @@ if 0 and 'for example':
     for depth, toolchainroot, toolrelpath, toolname, toolabspath in finder(toolchainroot)():
         pass
 
+def deepget(dictionary, *keys):
+    result = dictionary
+    for k in keys:
+        result = result.get(k, {})
+    return result
 
 def msecs(unixtime=None):
     "Return number of msec of current time as string."

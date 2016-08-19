@@ -88,30 +88,46 @@ You will see something like::
 List the current or builtin configuration::
 
    $ tct config list
-   [general]
+   [RenderDocumentation]
+   email_admin = martin.bless@gmail.com
+   email_user_instead_of_real = martin.bless@gmail.com
+   email_user_these_too = martin.bless@gmail.com
    temp_home = /home/marble/Repositories/mbnas/mbgit/tct/TEMPROOT_NOT_VERSIONED
    toolchains_home = /home/marble/Repositories/mbnas/mbgit/toolchains
-   email_admin = martin.bless@gmail.com
+   webroot_abspath = /home/mbless/public_html
 
 
 Set proper values once::
 
-   # the root of tmpfiles for TCT
-   tct config set  temp_HOME  /tmp/TCT
-
    # set admin email
-   tct config set  email_admin  martin.bless@typo3.org
+   tct config set  -s RenderDocumentation email_admin  martin.bless@typo3.org
+
+   # if set, send emails user here instead
+   tct config set  -s RenderDocumentation email_user_instead_of_real  martin.bless@typo3.org,martin.bless@typo3.org
+
+   # if set, send emails user additionally here
+   tct config set  -s RenderDocumentation email_user_these_too  martin.bless@typo3.org,martin.bless@typo3.org
+
+   # the root of tmpfiles for TCT
+   tct config set  -s RenderDocumentation temp_HOME  /tmp/TCT
 
    # Where do we provide toolchains?
-   tct config set  toolchains_home /home/mbless/Toolchains
+   tct config set  -s RenderDocumentation toolchains_home  /home/mbless/Toolchains
+
+   # on the server - no / at the end!
+   tct config set  -s RenderDocumentation webroot_abspath  /home/mbless/public_html
+
 
 Verify::
 
    $ tct config list
-   [general]
-   temp_home = /tmp/TCT
-   toolchains_home = /home/mbless/Toolchains
-   email_admin = martin.bless@typo3.org
+   [RenderDocumentation]
+   email_admin = martin.bless@gmail.com
+   email_user_instead_of_real = martin.bless@gmail.com
+   email_user_these_too = martin.bless@gmail.com
+   temp_home = /home/marble/Repositories/mbnas/mbgit/tct/TEMPROOT_NOT_VERSIONED
+   toolchains_home = /home/marble/Repositories/mbnas/mbgit/toolchains
+   webroot_abspath = /home/mbless/public_html
 
 
 Run a toolchain::

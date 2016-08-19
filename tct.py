@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import sys
 
-from tctlib import finder, data2json, readjson, writejson, logstamp, logstamp_finegrained
+from tctlib import finder, data2json, readjson, writejson, logstamp, logstamp_finegrained, deepget
 
 PY3 = sys.version_info[0] == 3
 
@@ -22,11 +22,25 @@ stats_exitcodes = {}
 INITIAL_RESULT = {'FACTS':[], 'MILESTONES':[], 'loglist': []}
 
 BUILTIN_CFG = """
+
 [general]
-email_admin = martin.bless@gmail.com
-toolchains_home = /home/marble/Repositories/mbnas/mbgit/toolchains
-temp_home = /home/marble/Repositories/mbnas/mbgit/tct/TEMPROOT_NOT_VERSIONED
-# temp_home = /tmp/tct_uczkq9NVCc
+temp_home = /tmp/TCT
+toolchains_home = /home/mbless/Toolchains
+
+"""
+
+dummy = """
+ tct config set -s RenderDocumentation email_admin                martin.bless@gmail.com,martin.bless@gmail.com
+ tct config set -s RenderDocumentation email_user_instead_of_real martin.bless@gmail.com,martin.bless@gmail.com
+ tct config set -s RenderDocumentation email_user_these_too       martin.bless@gmail.com,martin.bless@gmail.com
+ tct config set -s RenderDocumentation lockfile_name lockfile.json
+
+ tct config set temp_home                  /tmp/TCT
+ tct config set toolchains_home            /home/mbless/Toolchains
+
+## laptop:
+# tct config set temp_home                  /home/marble/Repositories/mbnas/mbgit/tct/TEMPROOT_NOT_VERSIONED
+# tct config set toolchains_home            /home/marble/Repositories/mbnas/mbgit/toolchains
 """
 
 user_home = os.path.join(os.path.expanduser('~'))
@@ -194,20 +208,45 @@ def clean(dry_run):
 @click.option('--config', '-c', nargs=2, multiple=True,
               metavar='KEY VALUE', help='Define or override config key-value pair (repeatable)')
 @click.option('--dry-run', '-n', is_flag=True, help='Perform a trial run with no changes made.')
-def run(toolchain, config, dry_run):
+@click.option('--clean', is_flag=True, help='Remove subdirs from toolchains\'s temp folder, then exit.')
+@click.option('--toolchain-help', is_flag=True, help='Tell the toolchain to display its help text. '
+              'The toolchain should do that and then exit.')
+@click.option('--toolchain-action', '-T', multiple=True,
+              metavar='ACTION',
+              help='Tell the toolchain to execute the action. (repeatable)')
+
+def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean):
     """Run a toolchain.
 
     TOOLCHAIN is the name of the toolchain to be run. It must either be the name of
     a subfolder in TOOLCHAINS_HOME or an absolute path to the toolchain folder.
     """
 
-    FACTS['tc_name'] = toolchain
+    FACTS['toolchain_name'] = toolchain
     FACTS['toolchain_folder'] = os.path.join(FACTS['toolchains_home'], toolchain)
-    tempname = '%s-%s' % (FACTS['tc_name'], FACTS['run_id'])
-    workdir_home = os.path.join(FACTS['temp_home'], tempname)
+    FACTS['toolchain_help'] = toolchain_help
+    FACTS['toolchain_actions'] = toolchain_action # from singular to plural
+    FACTS['toolchain_temp_home'] = os.path.join(FACTS['temp_home'], toolchain)
+    tempname = '%s' % (FACTS['run_id'],)
+    workdir_home = os.path.join(FACTS['toolchain_temp_home'], tempname)
     factsfile = os.path.join(workdir_home, 'facts.json')
     milestonesfile = os.path.join(workdir_home, 'milestones.json')
     binabspath = FACTS['binabspath']
+
+    if clean:
+        parts = FACTS['toolchain_temp_home'].split('/')
+        ok = len(parts) >= 4 and parts[-2] == 'TCT'
+        for top, dirs, files in os.walk(FACTS['toolchain_temp_home']):
+            for dir in dirs:
+                dest = os.path.join(top,dir)
+                if dry_run:
+                    print('to be removed:', dest)
+                else:
+                    if FACTS['verbose']:
+                        print(dest)
+                    shutil.rmtree(os.path.join(top, dir))
+            break
+        sys.exit(0)
 
     # add parameters to facts so we can check these with --dry-run
     FACTS['run_command'] = dict(
@@ -221,6 +260,12 @@ def run(toolchain, config, dry_run):
     for key, value in config:
         FACTS['run_command'][key] = value
 
+    FACTS['tctconfig'] = {}
+    for section in tctconfig.sections():
+        FACTS['tctconfig'][section] = FACTS['tctconfig'].get(section, {})
+        for option in tctconfig.options(section):
+            FACTS['tctconfig'][section][option] = tctconfig.get(section, option)
+
     possibly_dump_params()
 
     if not os.path.exists(FACTS['toolchain_folder']):
@@ -230,7 +275,7 @@ def run(toolchain, config, dry_run):
     verbose = FACTS['verbose']
 
     if dry_run:
-        click.echo("dry-run: tools in toolchain '%s':" % (FACTS['tc_name'],))
+        click.echo("dry-run: tools in toolchain '%s':" % (FACTS['toolchain_name'],))
         cnt = 0
         for depth, toolchainroot, toolrelpath, toolname, toolabspath in finder(FACTS['toolchain_folder'])():
             cnt += 1
@@ -248,6 +293,15 @@ def run(toolchain, config, dry_run):
     if not os.path.exists(milestonesfile):
         writejson(INITIAL_MILESTONES, milestonesfile)
 
+
+
+
+
+
+
+
+
+
     milestones = readjson(milestonesfile)
     tct_skipping = milestones.get('tct_skipping')
 
@@ -263,6 +317,7 @@ def run(toolchain, config, dry_run):
             if (depth < lastdepth) or (depth == lastdepth and toolrelpath != lasttoolrelpath):
                 skipping = False
 
+        toolfolderabspath = os.path.split(toolabspath)[0]
         workdir = os.path.join(workdir_home, toolrelpath)
         if tct_skipping:
             if os.path.exists(os.path.join(workdir, 'stop_tct_skipping')):
@@ -272,8 +327,10 @@ def run(toolchain, config, dry_run):
 
         if not os.path.exists(workdir):
             os.makedirs(workdir)
-        paramsfile = os.path.join(workdir, 'params.json')
-        resultfile = os.path.join(workdir, 'result.json')
+        paramsfile2 = os.path.join(workdir, 'params.json')
+        paramsfile = os.path.join(workdir, 'params_' + toolname[4:] + '.json')
+        resultfile2 = os.path.join(workdir, 'result.json')
+        resultfile = os.path.join(workdir, 'result_' + toolname[4:] + '.json')
         if not os.path.exists(resultfile):
             writejson(INITIAL_RESULT, resultfile)
 
@@ -288,9 +345,13 @@ def run(toolchain, config, dry_run):
             "resultfile": resultfile,
             "temp_home": FACTS['temp_home'],
             "toolabspath": toolabspath,
-            "toolchainname": FACTS['tc_name'],
+            "toolchain_actions": FACTS['toolchain_actions'],
+            "toolchain_name": FACTS['toolchain_name'],
             "toolchain_folder": FACTS['toolchain_folder'],
+            "toolchain_help": FACTS['toolchain_help'],
+            "toolchain_temp_home": FACTS['toolchain_temp_home'],
             "toolchains_home": FACTS['toolchains_home'],
+            "toolfolderabspath": toolfolderabspath,
             "toolname": toolname,
             "toolrelpath": toolrelpath,
             "workdir": workdir,
@@ -306,9 +367,13 @@ def run(toolchain, config, dry_run):
             "resultfile": "Absolute path to the JSON file where this tool should save its results and processing notes in",
             "temp_home": "Absolute path to the folder where temp files are created in",
             "toolabspath": "Absolute path to this tool. A 'tool' is an executable file with a name starting with 'run_'.",
-            "toolchainname": "Name of the toolchain. It is equal to the name of the folder where the toolchain starts.",
+            "toolchain_actions": "List of actions (=words) the toolchain should do.",
+            "toolchain_name": "Name of the toolchain. It is equal to the name of the folder where the toolchain starts.",
             "toolchain_folder": "Absolute path to the active (=current) toolchain",
+            "toolchain_help": "If True, the toolchain should display its help and exit.",
+            "toolchain_temp_home": "Absolute path to the root folder for temp files of this toolchain.",
             "toolchains_home": "Absolute path to the root folder holding toolchains",
+            "toolfolderabspath": "Absolute path to the folder of the current tool.",
             "toolname": "The filename of the executable file. It starts with 'run_'.",
             "toolrelpath": "The relative path in the toolchain",
             "workdir": "Absolute path to the workdir for this tool. The tool should think of this folder as 'tempdir'.",
@@ -327,6 +392,8 @@ def run(toolchain, config, dry_run):
             click.echo('   %s' % tool_id)
 
         exitcode = subprocess.call(cmd, shell=True, cwd=workdir)
+        if verbose:
+            click.echo('   exitcode: %s' % exitcode)
 
         stats_exitcodes[exitcode] = stats_exitcodes.get(exitcode, 0) + 1
 
@@ -334,10 +401,10 @@ def run(toolchain, config, dry_run):
         milestones = readjson(milestonesfile)
         result = readjson(resultfile)
         writejson(result, resultfile)
-        facts['TOOL_exitcodes'] = facts.get('TOOL_exitcodes', {})
-        facts['TOOL_facts'] = facts.get('TOOL_facts', {})
-        facts['TOOL_exitcodes'][tool_id] = exitcode
-        facts['TOOL_facts'][toolrelpath] = result.get('FACTS')
+        facts['tools_exitcodes'] = facts.get('tools_exitcodes', {})
+        facts['tools_facts'] = facts.get('tools_facts', {})
+        facts['tools_exitcodes'][tool_id] = exitcode
+        facts['tools_facts'][toolrelpath] = result.get('FACTS')
         writejson(facts, factsfile)
 
         toolmilestones = result.get('MILESTONES')
@@ -433,4 +500,3 @@ def set(key, value, section):
     tctconfig_user.set(section, key, value)
     with file(tctconfig_file_user,'w') as f2:
         tctconfig_user.write(f2)
-
