@@ -4,7 +4,23 @@ import json
 import os
 import time
 
+__all__ =  [
+    'data2json',
+    'deepget',
+    'finder',
+    'logstamp',
+    'logstamp_finegrained',
+    'msecs',
+    'readjson',
+    'versiontuple',
+    'writejson',
+]
+
 def finder(dirpath):
+    # Usage:
+    # for depth, toolchainroot, toolrelpath, toolname, toolabspath in finder(toolchainroot)():
+    #     pass
+    #
     dirpathlen = len(dirpath)
     initialdepth = dirpath.count(os.path.sep)
     def finder1():
@@ -17,12 +33,6 @@ def finder(dirpath):
                 if os.path.isfile(fpath) and os.access(fpath, os.X_OK) and file.startswith('run_'):
                     yield (depth, dirpath, root[dirpathlen:].strip(os.path.sep), file, fpath)
     return finder1
-
-
-if 0 and 'for example':
-
-    for depth, toolchainroot, toolrelpath, toolname, toolabspath in finder(toolchainroot)():
-        pass
 
 def deepget(dictionary, *keys):
     result = dictionary
@@ -51,8 +61,6 @@ def logstamp_finegrained(unixtime=None, fmt='%Y-%m-%d_%H-%M-%S_%f'):
 
     return logstamp(unixtime, fmt=fmt)
 
-
-
 def readjson(fpath):
     result = None
     with file(fpath) as f1:
@@ -68,3 +76,10 @@ def data2json(data):
     io = StringIO()
     json.dump(data, io, sort_keys=True, indent=2, separators=(',', ': '))
     return io.getvalue()
+
+def versiontuple(v, n=12):
+   filled = []
+   for point in v.split("."):
+      filled.append(point.zfill(n))
+   return tuple(filled)
+
