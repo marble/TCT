@@ -21,6 +21,7 @@ else:
 
 FACTS = {}
 INITIAL_MILESTONES = {'dummy':'1'}
+final_exitcode = None
 stats_exitcodes = {}
 INITIAL_RESULT = {'FACTS':[], 'MILESTONES':[], 'loglist': []}
 
@@ -296,15 +297,6 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean):
     if not os.path.exists(milestonesfile):
         writejson(INITIAL_MILESTONES, milestonesfile)
 
-
-
-
-
-
-
-
-
-
     milestones = readjson(milestonesfile)
     tct_skipping = milestones.get('tct_skipping')
 
@@ -330,9 +322,7 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean):
 
         if not os.path.exists(workdir):
             os.makedirs(workdir)
-        paramsfile2 = os.path.join(workdir, 'params.json')
         paramsfile = os.path.join(workdir, 'params_' + toolname[4:] + '.json')
-        resultfile2 = os.path.join(workdir, 'result.json')
         resultfile = os.path.join(workdir, 'result_' + toolname[4:] + '.json')
         if not os.path.exists(resultfile):
             writejson(INITIAL_RESULT, resultfile)
@@ -394,6 +384,8 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean):
             click.echo('==================================================')
             click.echo('   %s' % tool_id)
 
+
+        # START the tool
         exitcode = subprocess.call(cmd, shell=True, cwd=workdir)
         if verbose:
             click.echo('   exitcode: %s' % exitcode)
@@ -402,6 +394,7 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean):
 
         facts = readjson(factsfile)
         milestones = readjson(milestonesfile)
+        final_exitcode = milestones.get('FINAL_EXITCODE')
         result = readjson(resultfile)
         writejson(result, resultfile)
         facts['tools_exitcodes'] = facts.get('tools_exitcodes', {})
@@ -444,6 +437,10 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean):
         click.echo()
         click.echo('We saw these exitcodes (code, count):')
         click.echo(data2json(stats_exitcodes))
+    if final_exitcode is not None:
+        if verbose:
+            click.echo('exiting with exitcode %s' % final_exitcode)
+        sys.exit(final_exitcode)
 
 
 @cli.group()
