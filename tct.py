@@ -1,3 +1,6 @@
+#! /usr/bin/env python
+# coding: utf-8
+
 from __future__ import print_function
 import click
 import ConfigParser
@@ -7,10 +10,9 @@ import shutil
 import subprocess
 import sys
 
-#from tctlib import finder, data2json, readjson, writejson, logstamp, logstamp_finegrained, deepget, \
-#    versiontuple
-
 from tctlib import *
+
+__VERSION__ = '0.1.1'
 
 PY3 = sys.version_info[0] == 3
 
@@ -21,9 +23,9 @@ else:
 
 FACTS = {}
 INITIAL_MILESTONES = {'dummy':'1'}
+INITIAL_RESULT = {'FACTS':[], 'MILESTONES':[], 'loglist': []}
 final_exitcode = None
 stats_exitcodes = {}
-INITIAL_RESULT = {'FACTS':[], 'MILESTONES':[], 'loglist': []}
 
 BUILTIN_CFG = """
 
@@ -31,20 +33,6 @@ BUILTIN_CFG = """
 temp_home = /tmp/TCT
 toolchains_home = /home/mbless/Toolchains
 
-"""
-
-dummy = """
- tct config set -s RenderDocumentation email_admin                martin.bless@gmail.com,martin.bless@gmail.com
- tct config set -s RenderDocumentation email_user_instead_of_real martin.bless@gmail.com,martin.bless@gmail.com
- tct config set -s RenderDocumentation email_user_these_too       martin.bless@gmail.com,martin.bless@gmail.com
- tct config set -s RenderDocumentation lockfile_name lockfile.json
-
- tct config set temp_home                  /tmp/TCT
- tct config set toolchains_home            /home/mbless/Toolchains
-
-## laptop:
-# tct config set temp_home                  /home/marble/Repositories/mbnas/mbgit/tct/TEMPROOT_NOT_VERSIONED
-# tct config set toolchains_home            /home/marble/Repositories/mbnas/mbgit/toolchains
 """
 
 user_home = os.path.join(os.path.expanduser('~'))
@@ -77,7 +65,7 @@ CONTEXT_SETTINGS = {'default_map': ctx}
               help='Enable verbose mode.')
 @click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
 
-@click.version_option('1.0')
+@click.version_option(__VERSION__)
 def cli(toolchains_home, config, verbose, temp_home, dump_params):
     """tct, the toolchain tool, is a command line tool that travels a toolchain
     folder alphabetically and topdown and runs each tool it finds.
@@ -103,10 +91,10 @@ def cli(toolchains_home, config, verbose, temp_home, dump_params):
     FACTS['binabspath'] = os.path.split(os.path.abspath(os.path.normpath(sys.argv[0])))[0]
 
 
-
 def dump_params(facts):
     click.echo(data2json(facts))
     sys.exit()
+
 
 def possibly_dump_params():
     if FACTS['dump_params']:
@@ -134,7 +122,6 @@ def list():
     if verbose:
         if cnt == 0:
             print("   None.")
-
 
 
 @cli.command()
@@ -485,7 +472,6 @@ def remove(key, section):
     if removed:
         with file(tctconfig_file_user, 'w') as f2:
             tctconfig_user.write(f2)
-
 
 
 @config.command()
