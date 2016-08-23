@@ -1,5 +1,4 @@
 
-
 ========================
 TCT - The Toolchain Tool
 ========================
@@ -11,52 +10,22 @@ A tool to run toolchains
 
 :Author:          Martin Bless <martin@mbless.de>
 :Repository:      https://github.com/marble/TCT.git
-:Version:         Early Alpha
+:Version:         Early - but working well already :-)
+:See also:        https://github.com/marble/Toolchain_RenderDocumentation
 
 .. highlight:: shell
 .. default-role:: code
+
 
 Description
 ===========
 
 For Linux-like systems. Run `tct --help` after installation.
+TCT has subcommands similar to those you may know from GIT.
+Try --help on every subcommand and whenever you're missing information.
+TCT will then either display help or stop.
 
-((...))
-
-
-Install
-=======
-
-::
-
-   gitdir=/home/mbless/HTDOCS/github.com/marble/TCT.git
-   git clone https://github.com/marble/TCT.git $gitdir
-
-   # activate an existing, virtual environment
-   source ~/venvs/tct/venv/bin/activate
-   (venv)mbless@srv123:~/HTDOCS/github.com/marble/TCT.git$  # <-- the prompt you get
-
-   # choose only ONE method of the two:
-
-   # method 1:
-   (venv)$  cd $gitdir
-   (venv)$  pip install --editable .
-
-   # method 2:
-   (venv)$  cd $gitdir
-   (venv)$  pip install .
-
-   # test
-   (venv)$  cd ~
-   (venv)$  tct --help
-
-   # victory!
-
-
-Configure
-=========
-
-Learn how to get help::
+Examples::
 
    (venv)$  tct               --help
    (venv)$  tct config        --help
@@ -65,120 +34,232 @@ Learn how to get help::
    (venv)$  tct config remove --help
    (venv)$  tct config set    --help
 
-.. highlight:: none
+   (venv)$ tct clean  --help
+   (venv)$ tct run    --help
 
-You will see something like::
 
-   Usage: tct config [OPTIONS] COMMAND [ARGS]...
+Install
+=======
 
-     Handle the USER configuration file ~/.tctconfig.cfg
+Prepare A Virtualenv
+--------------------
 
-   Options:
-     --help  Show this message and exit.
+The idea to work with TCT goes like this.
 
-   Commands:
-     get     Get the value for KEY from configuration...
-     list    Print configuration to stdout.
-     remove  Remove KEY from the given section of the...
-     set     Set VALUE for KEY in configuration file.
+#. Create a place to keep 'virtualenv' installations::
+
+      mkdir ~/venvs
+
+#. Create a place for a 'tct' virtualenv::
+
+      mkdir ~/venvs/tct
+
+#. Create the virtualenv::
+
+      cd ~/venvs/tct
+      virtualenv venv  # always use 'venv' as name to make it simple
+
+#. Activate the virtual environment and install whatever you need::
+
+      $  source ~/venvs/tct/venv/bin/activate
+      (venv)$  pip install --upgrade pip
+      (venv)$  pip install --upgrade sphinx
+      (venv)$  # ...
+
+
+Fetch TCT
+---------
+
+::
+
+   # just a place to clone to
+   gitdir=~/HTDOCS/github.com/marble/TCT.git
+
+   # the source url
+   giturl=https://github.com/marble/TCT.git
+
+   git clone  $giturl $gitdir
+
+
+Install TCT
+-----------
+
+   # activate the virtual environment
+   source ~/venvs/tct/venv/bin/activate
+   cd $gitdir
+   (venv)mbless@srv123:~/HTDOCS/github.com/marble/TCT.git$  # <-- the prompt you get
+
+   (venv)$  pip install .  --upgrade  # install from this dir
+
+   (venv)$  cd ~          # go anywhere
+   (venv)$  tct --help    # tct should run just like any GNU tool
+
+   # Celebrate the victory!
+
+   # End of this snippet.
+
 
 .. highlight:: shell
 
+Basic configuration
+-------------------
 
-List the current or builtin configuration::
+Show::
 
-   $ tct config list
+   (venv)$  tct config list
+
+TCT itself uses these settings::
+
+   [general]
+   toolchains_home = /home/mbless/Toolchains
+   temp_home = /tmp/TCT
+
+Toolchains use the section with their name. So for example toolchain 'RenderDocumentation'
+respects this section::
+
    [RenderDocumentation]
    email_admin = martin.bless@gmail.com
-   email_user_instead_of_real = martin.bless@gmail.com
-   email_user_these_too = martin.bless@gmail.com
-   temp_home = /home/marble/Repositories/mbnas/mbgit/tct/TEMPROOT_NOT_VERSIONED
-   toolchains_home = /home/marble/Repositories/mbnas/mbgit/toolchains
    webroot_abspath = /home/mbless/public_html
+   email_user_to = martin.bless@gmail.com
+   htaccess_template_show_latest = /home/mbless/scripts/config/_htaccess
+   email_user_cc = martin.bless@typo3.org
+   url_of_webroot = https://docs.typo3.org
+   email_user_bcc = martin.bless@gmail.com
+   webroot_part_of_builddir = /home/mbless/public_html
+   lockfile_name = lockfile.json
+
+Examples::
+
+   (venv)$  tct config set --help
+   (venv)$  tct config set --section RenderDocumentation  email_user_to  martin@mbless.de
+
+   # verify
+   (venv)$  tct config get --section RenderDocumentation  email_user_to
+   (venv)$  tct config list
 
 
-Set proper values once::
-
-   # set admin email
-   tct config set  -s RenderDocumentation email_admin  martin.bless@typo3.org
-
-   # if set, send emails user here instead
-   tct config set  -s RenderDocumentation email_user_instead_of_real  martin.bless@typo3.org,martin.bless@typo3.org
-
-   # if set, send emails user additionally here
-   tct config set  -s RenderDocumentation email_user_these_too  martin.bless@typo3.org,martin.bless@typo3.org
-
-   # the root of tmpfiles for TCT
-   tct config set  -s RenderDocumentation temp_HOME  /tmp/TCT
-
-   # Where do we provide toolchains?
-   tct config set  -s RenderDocumentation toolchains_home  /home/mbless/Toolchains
-
-   # on the server - no / at the end!
-   tct config set  -s RenderDocumentation webroot_abspath  /home/mbless/public_html
+Other sections like `[ServerSrv123]` or `[ServerMarble]` are in there just
+for convenience save and keep settings. Unless you have a toolchain with the same
+name they are not used.
 
 
-Verify::
+Provide Toolchains
+==================
 
-   $ tct config list
-   [RenderDocumentation]
-   email_admin = martin.bless@gmail.com
-   email_user_instead_of_real = martin.bless@gmail.com
-   email_user_these_too = martin.bless@gmail.com
-   temp_home = /home/marble/Repositories/mbnas/mbgit/tct/TEMPROOT_NOT_VERSIONED
-   toolchains_home = /home/marble/Repositories/mbnas/mbgit/toolchains
-   webroot_abspath = /home/mbless/public_html
+Create a place::
+
+   mkdir ~/Toolchains
+
+Clone a toolchain::
+
+   git clone https://github.com/marble/Toolchain_RenderDocumentation  ~/Toolchains/RenderDocumentation
 
 
-Run a toolchain::
+Running Toolchains
+==================
 
-   # get help
+Understand
+----------
+
+Verify toolchain's home is set::
+
+   $(venv)  tct config get toolchains_home
+   /home/mbless/Toolchains
+
+Run::
+
    $ tct run --help
+   $ tct -v run RenderDocumentation    # verbose
+   $ tct    run RenderDocumentation    # not verbose
+   $ tct -D run RenderDocumentation    # debug display params
+   $ tct    run RenderDocumentation -n # dry-run
 
-   # run a simulation (dry-run)
-   $ tct run \
+Show the help that the toolchain brings::
+
+   $ tct    run RenderDocumentation --toolchain-help
+
+Remove older builds from temp area FOR THIS TOOLCHAIN::
+
+   $ tct    run RenderDocumentation --clean -n  # dry-run, just list
+   $ tct    run RenderDocumentation --clean     # live-run, delete!
+
+Only one instance of 'RenderDocumentation' can be running at a time.
+To assure this a lockfile is created. If a prior run fails to remove
+that lockfile at the end you can FORCE the removal:
+
+   $ tct    run RenderDocumentation -T unlock
+
+
+Do the live-run
+---------------
+
+The toolchain 'RenderDocumentation' requires a parameter 'makedir'.
+TCT's option `-c, --config` can be used multiply and takes a key value pair
+each time.
+
+Start a dry-run like this::
+
+   (venv)$ tct run \
       RenderDocumentation \
       --dry-run \
-      --config makedir /home/mbless/HTDOCS/github.com/TYPO3-Documentation/TYPO3/Reference/CoreApi.git.make
+      --config  makedir  /home/mbless/HTDOCS/github.com/TYPO3-Documentation/TYPO3/Reference/CoreApi.git.make
 
-   $ # See the list of tools that are about to be run.
-   $ # See something like:
-       1 10-Show-Usage/run_01.py
-    2 14-Check-Parameters/run_01.py
-    3 16-Get-Settings/run_01.py
-    4 18-Update-the-Repository/run_01.py
-    5 20-Look-for-Documentation/run_01.py
-    6 22-Copy-the-project/run_01.py
-    7 24-Copy-the-Makedir/run_01.py
-    8 26-Inspect-TheProject/run_01.py
-    9 28-Check-RebuildNeeded/run_01.py
-   10 30-Move-Localizations-away/run_01.py
-   11 32-Convert-SettingsYml/run_01.py
-   12 34-Fix-Buildsettings/run_01.py
-   13 36-Prepare-Sphinx/run_01.py
-   14 38-Run-Included-Files-Check/run_01.py
-   15 40-Make-Html/run_01.py
-   16 42-Make-SingleHtml/run_01.py
-   17 44-Make-Latex/run_01.py
-   18 46-Tweak-tex-file/run_01.py
-   19 48-Tweak-tex-make-file/run_01.py
-   20 50-Make-Pdf/run_01.py
-   21 52-Cleanup-Html-Builds/run_01.py
-   22 54-Create-Package/run_01.py
-   23 56-Replace-_static-in-html/run_01.py
-   24 58-Remove-_static-from-html/run_01.py
-   25 60-Assemble-Result/run_01.py
-   26 64-Create-buildinfo/run_01.py
+Start a true live-run like this::
 
-
-
-   # do a live run
-   $ tct run \
+   (venv)$ tct run \
       RenderDocumentation \
-      --config makedir /home/mbless/HTDOCS/github.com/TYPO3-Documentation/TYPO3/Reference/CoreApi.git.make
-      --config rebuild_needed 1
+      --config  makedir  /home/mbless/HTDOCS/github.com/TYPO3-Documentation/TYPO3/Reference/CoreApi.git.make
 
-   # Find all data and the result(s) in `temp_home`
+Force a rebuild regardless of checksums::
+
+   (venv)$ tct run \
+      RenderDocumentation \
+      --config  makedir  /home/mbless/HTDOCS/github.com/TYPO3-Documentation/TYPO3/Reference/CoreApi.git.make
+      --config  rebuild_needed 1
+
+Send notification email to self instead of real user, be verbose::
+
+   (venv)$ tct -v run \
+      RenderDocumentation \
+      -c  makedir  /home/mbless/HTDOCS/github.com/TYPO3-Documentation/TYPO3/Reference/CoreApi.git.make
+      -c  rebuild_needed 1
+      -c  email_user_to  self@my.email.address
+
+
+About the 'makedir' parameter
+-----------------------------
+
+This is special to the 'RenderDocumentation' toolchain. Here's just a short
+explanation to make this readme complete for some people:
+
+At the moment 'RenderDocumentation' looks at the :file:`makedir` to find the two files
+:file:`buildsettings.sh` and :file:`conf.py`. Both are used readonly.
+
+Depending on how far processing gets a file :file:`build.checksum` may be
+created there.
+
+
+Inspect what happened
+---------------------
+
+Each live-run creates a folder structure in the temp area that replicates
+the toolchain's folder structure. 'params'-files show with which params the tools
+were run. 'result'-files contain the output of a single tool.
+
+All data files are JSON files.
+
+A global FACTS file is created and maintained by TCT. Otherwise it should be
+treated as readlonly.
+
+The MILESTONES file is most important. It holds the "collective memory" of all
+tools. In general, every value that's in there not only has the value but also
+carries the message that THE OBJECT DOES IT EXIST. In other word:
+The idea is that if a file path is given in MILESTONES that file should actually
+exist.
+
+TCT looks at the result file of a single tool after it has run and picks up
+information from there that's named 'MILESTONES'. It then adds that information
+to the global :file:`MILESTONES.JSON` thereby overwriting if necessary.
 
 
 ((to be continued))
