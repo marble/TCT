@@ -46,18 +46,18 @@ Prepare A Virtualenv
 
 The idea to work with TCT goes like this.
 
-#. Create a place to keep 'virtualenv' installations::
+#. Create a place to keep *virtualenv* installations::
 
       mkdir ~/venvs
 
-#. Create a place for a 'tct' virtualenv::
+#. Create a place for a *tct* virtualenv::
 
       mkdir ~/venvs/tct
 
 #. Create the virtualenv::
 
       cd ~/venvs/tct
-      virtualenv venv  # always use 'venv' as name to make it simple
+      virtualenv venv  # always use *venv* as name to make it simple
 
 #. Activate the virtual environment and install whatever you need::
 
@@ -84,8 +84,11 @@ Fetch TCT
 Install TCT
 -----------
 
+::
+
    # activate the virtual environment
    source ~/venvs/tct/venv/bin/activate
+
    cd $gitdir
    (venv)mbless@srv123:~/HTDOCS/github.com/marble/TCT.git$  # <-- the prompt you get
 
@@ -98,8 +101,6 @@ Install TCT
 
    # End of this snippet.
 
-
-.. highlight:: shell
 
 Basic configuration
 -------------------
@@ -114,7 +115,7 @@ TCT itself uses these settings::
    toolchains_home = /home/mbless/Toolchains
    temp_home = /tmp/TCT
 
-Toolchains use the section with their name. So for example toolchain 'RenderDocumentation'
+Toolchains use the section with their name. So for example toolchain *RenderDocumentation*
 respects this section::
 
    [RenderDocumentation]
@@ -166,6 +167,11 @@ Verify toolchain's home is set::
    $(venv)  tct config get toolchains_home
    /home/mbless/Toolchains
 
+List available toolchains::
+
+   $(venv)  tct list
+   RenderDocumentation
+
 Run::
 
    $ tct run --help
@@ -174,7 +180,8 @@ Run::
    $ tct -D run RenderDocumentation    # debug display params
    $ tct    run RenderDocumentation -n # dry-run
 
-Show the help that the toolchain brings::
+Show the help that the toolchain brings and that TCT by itself
+cannont know about::
 
    $ tct    run RenderDocumentation --toolchain-help
 
@@ -183,9 +190,12 @@ Remove older builds from temp area FOR THIS TOOLCHAIN::
    $ tct    run RenderDocumentation --clean -n  # dry-run, just list
    $ tct    run RenderDocumentation --clean     # live-run, delete!
 
-Only one instance of 'RenderDocumentation' can be running at a time.
+This will, for example, remove ALL SUBFOLDERS from :file:`/tmp/TCT/RenderDocumentation`.
+So it will keep files and a lockfile like :file:`/tmp/TCT/RenderDocumentation/lockfile.json`.
+
+Only one instance of *RenderDocumentation* can be running at a time.
 To assure this a lockfile is created. If a prior run fails to remove
-that lockfile at the end you can FORCE the removal:
+that lockfile at the end you can FORCE the removal::
 
    $ tct    run RenderDocumentation -T unlock
 
@@ -193,7 +203,7 @@ that lockfile at the end you can FORCE the removal:
 Do the live-run
 ---------------
 
-The toolchain 'RenderDocumentation' requires a parameter 'makedir'.
+The toolchain *RenderDocumentation* requires a parameter *makedir*.
 TCT's option `-c, --config` can be used multiply and takes a key value pair
 each time.
 
@@ -226,13 +236,13 @@ Send notification email to self instead of real user, be verbose::
       -c  email_user_to  self@my.email.address
 
 
-About the 'makedir' parameter
------------------------------
+About the *makedir*' parameter
+------------------------------
 
-This is special to the 'RenderDocumentation' toolchain. Here's just a short
+This is special to the *RenderDocumentation* toolchain. Here's just a short
 explanation to make this readme complete for some people:
 
-At the moment 'RenderDocumentation' looks at the :file:`makedir` to find the two files
+At the moment *RenderDocumentation* looks at the :file:`makedir` to find the two files
 :file:`buildsettings.sh` and :file:`conf.py`. Both are used readonly.
 
 Depending on how far processing gets a file :file:`build.checksum` may be
@@ -243,8 +253,8 @@ Inspect what happened
 ---------------------
 
 Each live-run creates a folder structure in the temp area that replicates
-the toolchain's folder structure. 'params'-files show with which params the tools
-were run. 'result'-files contain the output of a single tool.
+the toolchain's folder structure. :file:`params`-files show with which params the tools
+were run. :file:`result`-files contain the output of a single tool.
 
 All data files are JSON files.
 
@@ -258,7 +268,7 @@ The idea is that if a file path is given in MILESTONES that file should actually
 exist.
 
 TCT looks at the result file of a single tool after it has run and picks up
-information from there that's named 'MILESTONES'. It then adds that information
+information from there that's named *MILESTONES*. It then adds that information
 to the global :file:`MILESTONES.JSON` thereby overwriting if necessary.
 
 
