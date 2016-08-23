@@ -22,7 +22,7 @@ Description
 
 For Linux-like systems. Run `tct --help` after installation.
 TCT has subcommands similar to those you may know from GIT.
-Try --help on every subcommand and whenever you're missing information.
+Try `--help` on every subcommand and whenever you're missing information.
 TCT will then either display help or stop.
 
 Examples::
@@ -41,7 +41,7 @@ Examples::
 Install
 =======
 
-Prepare A Virtualenv
+Prepare a Virtualenv
 --------------------
 
 The idea to work with TCT goes like this.
@@ -240,11 +240,9 @@ About the *makedir* parameter
 -----------------------------
 
 This is special to the *RenderDocumentation* toolchain. Here's just a short
-explanation to make this readme complete for some people:
-
+explanation to make this readme complete for some people.
 At the moment *RenderDocumentation* looks at the `makedir` to find the two files
 `buildsettings.sh` and `conf.py`. Both are used readonly.
-
 Depending on how far processing gets a file `build.checksum` may be
 created there.
 
