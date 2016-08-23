@@ -190,8 +190,8 @@ Remove older builds from temp area FOR THIS TOOLCHAIN::
    $ tct    run RenderDocumentation --clean -n  # dry-run, just list
    $ tct    run RenderDocumentation --clean     # live-run, delete!
 
-This will, for example, remove ALL SUBFOLDERS from :file:`/tmp/TCT/RenderDocumentation`.
-So it will keep files and a lockfile like :file:`/tmp/TCT/RenderDocumentation/lockfile.json`.
+This will, for example, remove ALL SUBFOLDERS from `/tmp/TCT/RenderDocumentation`.
+So it will keep files and a lockfile like `/tmp/TCT/RenderDocumentation/lockfile.json`.
 
 Only one instance of *RenderDocumentation* can be running at a time.
 To assure this a lockfile is created. If a prior run fails to remove
@@ -236,16 +236,16 @@ Send notification email to self instead of real user, be verbose::
       -c  email_user_to  self@my.email.address
 
 
-About the *makedir*' parameter
-------------------------------
+About the *makedir* parameter
+-----------------------------
 
 This is special to the *RenderDocumentation* toolchain. Here's just a short
 explanation to make this readme complete for some people:
 
-At the moment *RenderDocumentation* looks at the :file:`makedir` to find the two files
-:file:`buildsettings.sh` and :file:`conf.py`. Both are used readonly.
+At the moment *RenderDocumentation* looks at the `makedir` to find the two files
+`buildsettings.sh` and `conf.py`. Both are used readonly.
 
-Depending on how far processing gets a file :file:`build.checksum` may be
+Depending on how far processing gets a file `build.checksum` may be
 created there.
 
 
@@ -253,8 +253,8 @@ Inspect what happened
 ---------------------
 
 Each live-run creates a folder structure in the temp area that replicates
-the toolchain's folder structure. :file:`params`-files show with which params the tools
-were run. :file:`result`-files contain the output of a single tool.
+the toolchain's folder structure. `params`-files show with which params the tools
+were run. `result`-files contain the output of a single tool.
 
 All data files are JSON files.
 
@@ -269,7 +269,7 @@ exist.
 
 TCT looks at the result file of a single tool after it has run and picks up
 information from there that's named *MILESTONES*. It then adds that information
-to the global :file:`MILESTONES.JSON` thereby overwriting if necessary.
+to the global `MILESTONES.JSON` thereby overwriting if necessary.
 
 
 ((to be continued))
