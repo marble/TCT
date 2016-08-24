@@ -12,7 +12,7 @@ import sys
 
 from tctlib import *
 
-__VERSION__ = '0.1.1'
+__VERSION__ = '0.1.2'
 
 PY3 = sys.version_info[0] == 3
 
@@ -199,14 +199,16 @@ def clean(dry_run):
 @click.option('--config', '-c', nargs=2, multiple=True,
               metavar='KEY VALUE', help='Define or override config key-value pair (repeatable)')
 @click.option('--dry-run', '-n', is_flag=True, help='Perform a trial run with no changes made.')
-@click.option('--clean', is_flag=True, help='Remove subdirs from toolchains\'s temp folder, then exit.')
+@click.option('--clean-but', default=None, type=click.IntRange(0, 99),
+              help=('Remove subdirs from toolchains\'s temp folder. But keep the last 0..99 '
+                    'in order of folder name. Afterwards exit.'))
 @click.option('--toolchain-help', is_flag=True, help='Tell the toolchain to display its help text. '
               'The toolchain should do that and then exit.')
 @click.option('--toolchain-action', '-T', multiple=True,
               metavar='ACTION',
               help='Tell the toolchain to execute the action. (repeatable)')
 
-def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean):
+def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but):
     """Run a toolchain.
 
     TOOLCHAIN is the name of the toolchain to be run. It must either be the name of
@@ -224,18 +226,23 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean):
     milestonesfile = os.path.join(workdir_home, 'milestones.json')
     binabspath = FACTS['binabspath']
 
-    if clean:
+    if clean_but is not None:
         parts = FACTS['toolchain_temp_home'].split('/')
         ok = len(parts) >= 4 and parts[-2] == 'TCT'
         for top, dirs, files in os.walk(FACTS['toolchain_temp_home']):
+            dirs.sort(reverse=True)
+            cnt = 0
             for dir in dirs:
+                cnt +=1
                 dest = os.path.join(top,dir)
-                if dry_run:
-                    print('to be removed:', dest)
+                if cnt <= clean_but:
+                    todo = 'keep'
                 else:
-                    if FACTS['verbose']:
-                        print(dest)
-                    shutil.rmtree(os.path.join(top, dir))
+                    todo = 'remove'
+                if dry_run or FACTS['verbose']:
+                    print('%d (keep %d)  %s: %s' % (cnt, clean_but, todo, dest))
+                    if not dry_run and cnt > clean_but:
+                        shutil.rmtree(os.path.join(top, dir))
             break
         sys.exit(0)
 
