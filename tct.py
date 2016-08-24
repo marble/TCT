@@ -240,7 +240,7 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but)
                 else:
                     todo = 'remove'
                 if dry_run or FACTS['verbose']:
-                    print('%d (keep %d)  %s: %s' % (cnt, clean_but, todo, dest))
+                    print('%2d (%d to keep)  %s: %s' % (cnt, clean_but, todo, dest))
                     if not dry_run and cnt > clean_but:
                         shutil.rmtree(os.path.join(top, dir))
             break
