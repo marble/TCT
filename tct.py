@@ -12,7 +12,7 @@ import sys
 
 from tctlib import *
 
-__VERSION__ = '0.1.2'
+__VERSION__ = '0.1.3'
 
 PY3 = sys.version_info[0] == 3
 
@@ -241,8 +241,8 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but)
                     todo = 'remove'
                 if dry_run or FACTS['verbose']:
                     print('%2d (%d to keep)  %s: %s' % (cnt, clean_but, todo, dest))
-                    if not dry_run and cnt > clean_but:
-                        shutil.rmtree(os.path.join(top, dir))
+                if not dry_run and cnt > clean_but:
+                    shutil.rmtree(os.path.join(top, dir))
             break
         sys.exit(0)
 
@@ -306,6 +306,7 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but)
             if (depth < lastdepth) or (depth == lastdepth and toolrelpath != lasttoolrelpath):
                 skipping = False
 
+        toolname_pure = os.path.splitext(toolname)[0][4:]
         toolfolderabspath = os.path.split(toolabspath)[0]
         workdir = os.path.join(workdir_home, toolrelpath)
         if tct_skipping:
@@ -340,6 +341,7 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but)
             "toolchains_home": FACTS['toolchains_home'],
             "toolfolderabspath": toolfolderabspath,
             "toolname": toolname,
+            "toolname_pure": toolname_pure,
             "toolrelpath": toolrelpath,
             "workdir": workdir,
             "workdir_home": workdir_home,
@@ -361,7 +363,8 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but)
             "toolchain_temp_home": "Absolute path to the root folder for temp files of this toolchain.",
             "toolchains_home": "Absolute path to the root folder holding toolchains",
             "toolfolderabspath": "Absolute path to the folder of the current tool.",
-            "toolname": "The filename of the executable file. It starts with 'run_'.",
+            "toolname": "The filename of the executable file. It starts with 'run_', like 'run_01-Initialize.sh'",
+            "toolname_pure": "The meaningful part of the toolname, like '01-Initialize'",
             "toolrelpath": "The relative path in the toolchain",
             "workdir": "Absolute path to the workdir for this tool. The tool should think of this folder as 'tempdir'.",
             "workdir_home":
