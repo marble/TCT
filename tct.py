@@ -12,7 +12,7 @@ import sys
 
 from tctlib import *
 
-__VERSION__ = '0.1.3'
+__VERSION__ = '0.1.4'
 
 PY3 = sys.version_info[0] == 3
 
