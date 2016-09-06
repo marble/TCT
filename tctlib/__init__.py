@@ -34,10 +34,18 @@ def finder(dirpath):
                     yield (depth, dirpath, root[dirpathlen:].strip(os.path.sep), file, fpath)
     return finder1
 
-def deepget(dictionary, *keys):
+def deepget(dictionary, *keys, **kwargs):
+    if kwargs.has_key('default'):
+        default = kwargs['default']
+    else:
+        default = {}
     result = dictionary
     for k in keys:
-        result = result.get(k, {})
+        if result.has_key(k):
+            result = result[k]
+        else:
+            result = default
+            break
     return result
 
 def msecs(unixtime=None):
