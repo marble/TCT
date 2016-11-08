@@ -72,18 +72,18 @@ def logstamp_finegrained(unixtime=None, fmt='%Y-%m-%d_%H-%M-%S_%f'):
 
 def readjson(fpath):
     result = None
-    with codecs.open(fpath, 'r', 'utf-8') as f1:
+    with codecs.open(fpath, 'r', 'utf-8', errors='replace') as f1:
         result = json.load(f1)
     return result
 
 def writejson(data, fpath):
-    with codecs.open(fpath, 'w', 'utf-8') as f2:
-        json.dump(data, f2, sort_keys=True, indent=2, separators=(',', ': '), ensure_ascii=True)
+    with codecs.open(fpath, 'w', 'utf-8', errors='replace') as f2:
+        json.dump(data, f2, sort_keys=True, indent=2, separators=(',', ': '))
     return
 
 def data2json(data):
     io = StringIO()
-    json.dump(data, io, sort_keys=True, indent=2, separators=(',', ': '), ensure_ascii=True)
+    json.dump(data, io, sort_keys=True, indent=2, separators=(',', ': '))
     return io.getvalue()
 
 def versiontuple(v, n=12):
