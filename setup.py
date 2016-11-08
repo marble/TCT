@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='TCT Toolchain Tool',
-    version='0.1.4',
+    version='0.1.5',
     py_modules=['tct'],
     packages= ['tctlib'],
     include_package_data=True,
