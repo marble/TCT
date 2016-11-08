@@ -78,12 +78,12 @@ def readjson(fpath):
 
 def writejson(data, fpath):
     with codecs.open(fpath, 'w', 'utf-8') as f2:
-        json.dump(data, f2, sort_keys=True, indent=2, separators=(',', ': '))
+        json.dump(data, f2, sort_keys=True, indent=2, separators=(',', ': '), ensure_ascii=True)
     return
 
 def data2json(data):
     io = StringIO()
-    json.dump(data, io, sort_keys=True, indent=2, separators=(',', ': '))
+    json.dump(data, io, sort_keys=True, indent=2, separators=(',', ': '), ensure_ascii=True)
     return io.getvalue()
 
 def versiontuple(v, n=12):
