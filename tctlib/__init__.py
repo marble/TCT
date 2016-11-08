@@ -1,4 +1,5 @@
 from cStringIO import StringIO
+import codecs
 import datetime
 import json
 import os
@@ -71,12 +72,12 @@ def logstamp_finegrained(unixtime=None, fmt='%Y-%m-%d_%H-%M-%S_%f'):
 
 def readjson(fpath):
     result = None
-    with file(fpath) as f1:
+    with codecs.open(fpath, 'r', 'utf-8') as f1:
         result = json.load(f1)
     return result
 
 def writejson(data, fpath):
-    with file(fpath, 'w') as f2:
+    with codecs.open(fpath, 'w', 'utf-8') as f2:
         json.dump(data, f2, sort_keys=True, indent=2, separators=(',', ': '))
     return
 
