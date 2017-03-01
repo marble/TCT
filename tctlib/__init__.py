@@ -11,6 +11,7 @@ __all__ =  [
     'finder',
     'logstamp',
     'logstamp_finegrained',
+    'make_snapshot_of_milestones',
     'msecs',
     'readjson',
     'versiontuple',
@@ -48,6 +49,17 @@ def deepget(dictionary, *keys, **kwargs):
             result = default
             break
     return result
+
+
+def make_snapshot_of_milestones(milestonesfile_abspath, paramsfile_abspath):
+    import shutil
+
+    paramsfile_folder, paramsfile_name = os.path.split(paramsfile_abspath)
+    # do a rough check
+    if paramsfile_name.startswith('params_'):
+        dest = os.path.join(paramsfile_folder, 'milestones_' + paramsfile_name[7:])
+        shutil.copy(milestonesfile_abspath, dest)
+
 
 def msecs(unixtime=None):
     "Return number of msec of current time as string."

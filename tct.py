@@ -88,7 +88,16 @@ def cli(toolchains_home, config, verbose, temp_home, dump_params):
     FACTS['run_id'] = logstamp_finegrained()
     for key, value in config:
         FACTS[key] = value
-    FACTS['binabspath'] = os.path.split(os.path.abspath(os.path.normpath(sys.argv[0])))[0]
+    FACTS['python_exe_abspath'] = subprocess.check_output('which python', shell=True).strip()
+
+    # FACTS['binabspath']:  '/.../tct/venv/bin/' is what we are looking for
+    if __name__ == '__main__':
+        # when running tct/tct.py directly we need to deduce from the Python executable
+        FACTS['binabspath'] = os.path.split(FACTS['python_exe_abspath'])[0]
+    else:
+        # When we run 'tct' at the commandline, then we actually run '/.../tct/venv/bin/tct'.
+        # We prefer to take that value.
+        FACTS['binabspath'] = os.path.split(os.path.abspath(os.path.normpath(sys.argv[0])))[0]
 
 
 def dump_params(facts):
@@ -207,7 +216,6 @@ def clean(dry_run):
 @click.option('--toolchain-action', '-T', multiple=True,
               metavar='ACTION',
               help='Tell the toolchain to execute the action. (repeatable)')
-
 def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but):
     """Run a toolchain.
 
@@ -300,8 +308,13 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but)
     skipping = False
     exitcode = 0
     for depth, toolchainroot, toolrelpath, toolname, toolabspath in finder(FACTS['toolchain_folder'])():
+        # skipping means: Skip all the rest in the current folder, including subfolders
         if skipping:
-            if exitcode == 99:
+            # exitcodes >= 90 stop the toolchain
+            # usually we use: 90 .. 97 for some planned stopping
+            # 98 for: stop for debugging
+            # 99 for: we stop because we detected some kind of problem
+            if exitcode >= 90:
                 break
             if (depth < lastdepth) or (depth == lastdepth and toolrelpath != lasttoolrelpath):
                 skipping = False
@@ -322,10 +335,10 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but)
         if not os.path.exists(resultfile):
             writejson(INITIAL_RESULT, resultfile)
 
-        cmd = toolabspath + ' ' + paramsfile + ' ' + FACTS['binabspath']
+        cmd = [toolabspath, paramsfile, FACTS['binabspath']]
         params = {
             "binabspath": binabspath,
-            "cmd": cmd,
+            "cmd": ' '.join(cmd),
             "depth": depth,
             "factsfile": factsfile,
             "milestonesfile": milestonesfile,
@@ -383,7 +396,18 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but)
 
 
         # START the tool
-        exitcode = subprocess.call(cmd, shell=True, cwd=workdir)
+
+
+        if cmd[0].endswith('.py'):
+            # If tool is a Python script we explicitly run it like 'python tool.py params ...' because
+            # PyCharm in that case automatically turns debugging mode on for spawned subprocesses if
+            # debugging is already active.
+            cmd.insert(0, FACTS['python_exe_abspath'])
+            exitcode = subprocess.call(cmd, shell=False, cwd=workdir)
+        else:
+            # If tool is not a Python script let the shell find out how to run the tool.
+            exitcode = subprocess.call(cmd, shell=True, cwd=workdir)
+
         if verbose:
             click.echo('   exitcode: %s' % exitcode)
 
@@ -394,10 +418,12 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but)
         final_exitcode = milestones.get('FINAL_EXITCODE')
         result = readjson(resultfile)
         writejson(result, resultfile)
-        facts['tools_exitcodes'] = facts.get('tools_exitcodes', {})
-        facts['tools_facts'] = facts.get('tools_facts', {})
-        facts['tools_exitcodes'][tool_id] = exitcode
-        facts['tools_facts'][toolrelpath] = result.get('FACTS')
+
+        milestones['tools_exitcodes'] = milestones.get('tools_exitcodes', {})
+        milestones['tools_facts'] = milestones.get('tools_facts', {})
+        milestones['tools_exitcodes'][tool_id] = exitcode
+        milestones['tools_facts'][toolrelpath] = result.get('FACTS')
+
         writejson(facts, factsfile)
 
         toolmilestones = result.get('MILESTONES')
@@ -496,3 +522,25 @@ def set(key, value, section):
     tctconfig_user.set(section, key, value)
     with file(tctconfig_file_user,'w') as f2:
         tctconfig_user.write(f2)
+
+
+if __name__ == "__main__":
+    # while developing: Simulate commandline parameters
+    # assume cwd=/home/marble/Repositories/mbnas/mbgit/tct, so ../Makedirs/manual_gettingstarted.make is correct
+
+    subprocess.call('tct -v run RenderDocumentation -T unlock', shell=True)
+    subprocess.call('tct -v run RenderDocumentation --clean-but 0', shell=True)
+    if 1:
+        sys.argv[1:] = [e for e in (
+            '-v run RenderDocumentation '
+            # '-c makedir ../Makedirs/manual_gettingstarted.make '
+            # '-c makedir /home/marble/Repositories/mbnas/mbgit/Makedirs/Public-Info-000.make '
+            '-c makedir /home/marble/Repositories/mbnas/mbgit/Makedirs/ext_sphinx.make '
+            '-c email_admin_send_extra_mail 1 '
+            '-c email_user_do_not_send 1 '
+            '-c rebuild_needed 1 '
+            '-c talk 2 '
+            '-c make_singlehtml 1 '
+            '-c make_latex 1 '
+            '-c make_package 1 ').split(' ') if e]
+    cli()
