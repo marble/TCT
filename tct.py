@@ -167,15 +167,16 @@ def list(dump_params):
 
 
 @cli.command()
-@click.option('--dry-run', '-n', is_flag=True, help='Perform a trial run with no changes made.')
 @click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
-def clean(dry_run, dump_params):
+@click.option('--yes', is_flag=True, prompt='CLEAN the whole temp folder - really?')
+def clean(dump_params, yes):
     """Clean the temp folder."""
 
-    FACTS['clean_command'] = dict(dry_run=dry_run)
+    FACTS['clean_command'] = dict(dry_run=not yes)
     FACTS['dump_params'] = dump_params
     possibly_dump_params()
-    live_run = not dry_run
+    live_run = yes
+    dry_run = not live_run
     verbose = FACTS['verbose']
     temp_home = FACTS['temp_home']
 
