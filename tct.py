@@ -75,9 +75,11 @@ CONTEXT_SETTINGS = {'default_map': ctx}
               help='Enable verbose mode.')
 @click.option('--cfg-file', default=None,
               metavar='PATH', help='Read all configuration from this file only. Don\'t use other \'tctconfig.cfg\' files.')
+@click.option('--active-section', default=None,
+              metavar='SECTION_NAME', help='Specifies which section of the cfg-file is to be used.')
 
 @click.version_option(__VERSION__)
-def cli(toolchains_home, config, verbose, temp_home, cfg_file):
+def cli(toolchains_home, config, verbose, temp_home, cfg_file, active_section):
     """TCT, the toolchain tool, runs all tools of a folder and its subfolders.
 
     It travels the folder in alphabetical order and topdown. A tool is an
@@ -99,10 +101,15 @@ def cli(toolchains_home, config, verbose, temp_home, cfg_file):
             items = []
         for key, value in items:
             CONTEXT_SETTINGS['default_map'][key] = value
+        if not active_section:
+            active_section = CONTEXT_SETTINGS['default_map'].get('active_section')
         # An explicitely specified file will be the main file
         FACTS['main_cfg_file'] = cfg_file
         tctconfig_main = tctconfig
 
+    if not active_section:
+        active_section = 'Default'
+    FACTS['active_section'] = active_section
     FACTS['argv0'] = sys.argv[0] if len(sys.argv) else ''
     FACTS['cmdline'] = ' '.join(sys.argv)
     FACTS['cwd'] = os.path.abspath(os.getcwd())
