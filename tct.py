@@ -108,7 +108,7 @@ def cli(toolchains_home, config, verbose, temp_home, cfg_file, active_section):
         tctconfig_main = tctconfig
 
     if not active_section:
-        active_section = 'Default'
+        active_section = 'default'
     FACTS['active_section'] = active_section
     FACTS['argv0'] = sys.argv[0] if len(sys.argv) else ''
     FACTS['cmdline'] = ' '.join(sys.argv)
@@ -508,7 +508,7 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but,
 
 @cli.group()
 def config():
-    """List and get cfg data. Update main cfg file (~/.tctconfig.cfg or specified)"""
+    """List and get cfg data. Update the main cfg file."""
 
 @config.command()
 @click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
@@ -531,15 +531,15 @@ def list(dump_params):
 @click.option('--section', '-s', default='general', help="The section name. Defaults to 'general'")
 @click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
 def get(key, section, dump_params):
-    """Get the value for KEY from main configuration file."""
+    """Get the value for KEY from the ASSEMBLED configuration."""
 
     FACTS['dump_params'] = dump_params
     possibly_dump_params()
 
     try:
-        result = tctconfig_main.get(section, key)
+        result = tctconfig.get(section, key)
     except ConfigParser.NoOptionError:
-        result = 'Error: Option not found.'
+        result = 'KEY not found'
     click.echo(result)
 
 
@@ -548,7 +548,7 @@ def get(key, section, dump_params):
 @click.option('--section', '-s', default='general', help="The section name. Defaults to 'general'")
 @click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
 def remove(key, section, dump_params):
-    """Remove KEY from the given section of the main configuration file."""
+    """Remove KEY of section from THE MAIN configuration file."""
 
     global tctconfig_main
     FACTS['dump_params'] = dump_params
@@ -563,6 +563,9 @@ def remove(key, section, dump_params):
         if removed:
             with file(FACTS['main_cfg_file'], 'w') as f2:
                 tctconfig_main.write(f2)
+            click.echo('Removed from section \'%s\' of \'%s\'.' % (section, FACTS['main_cfg_file']))
+        else:
+            click.echo('Not found in section \'%s\' of \'%s\'.' % (section, FACTS['main_cfg_file']))
     else:
         click.echo('There is no \'main_cfg_file\'')
 
@@ -585,6 +588,7 @@ def set(key, value, section, dump_params):
         tctconfig_main.set(section, key, value)
         with file(FACTS['main_cfg_file'], 'w') as f2:
             tctconfig_main.write(f2)
+        click.echo('Updated \'%s\' in section \'%s\' of \'%s\'.' % (key, section, FACTS['main_cfg_file']))
     else:
         click.echo('There is no \'main_cfg_file\'')
 
@@ -620,4 +624,3 @@ if 1 and __name__ == "__main__":
 
 elif __name__ == "__main__":
     cli()
-
