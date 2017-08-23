@@ -21,11 +21,16 @@ if PY3:
 else:
     string_types = basestring,
 
-FACTS = {'main_cfg_file': None}
-INITIAL_MILESTONES = {'dummy':'1'}
+FACTS = {}
+INITIAL_MILESTONES = {}
 INITIAL_RESULT = {'FACTS':[], 'MILESTONES':[], 'loglist': []}
 final_exitcode = None
 stats_exitcodes = {}
+
+FACTS['main_cfg_file'] = None
+FACTS['initial_working_dir'] = os.path.abspath(os.getcwd())
+
+INITIAL_MILESTONES['dummy'] = 1
 
 BUILTIN_CFG = """
 
@@ -70,7 +75,7 @@ CONTEXT_SETTINGS = {'default_map': ctx}
               metavar='PATH', help='Root folder for tempfiles')
 @click.option('--config', '-c', nargs=2, multiple=True,
               metavar='KEY VALUE', help='Define or override config key-value pair (repeatable, '
-                                        'handed over to the toolchain)')
+                                        'passed in FACTS to the toolchain)')
 @click.option('--verbose', '-v', is_flag=True,
               help='Enable verbose mode.')
 @click.option('--cfg-file', default=None,
