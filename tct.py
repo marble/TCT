@@ -12,7 +12,7 @@ import sys
 
 from tctlib import *
 
-__VERSION__ = '0.1.4'
+__VERSION__ = '0.2.0'
 
 PY3 = sys.version_info[0] == 3
 
@@ -22,18 +22,30 @@ else:
     string_types = basestring,
 
 FACTS = {}
-INITIAL_MILESTONES = {'dummy':'1'}
+INITIAL_MILESTONES = {}
 INITIAL_RESULT = {'FACTS':[], 'MILESTONES':[], 'loglist': []}
 final_exitcode = None
 stats_exitcodes = {}
+
+FACTS['main_cfg_file'] = None
+FACTS['initial_working_dir'] = os.path.abspath(os.getcwd())
+
+INITIAL_MILESTONES['dummy'] = 1
 
 BUILTIN_CFG = """
 
 [general]
 temp_home = /tmp/TCT
-toolchains_home = /home/mbless/Toolchains
+toolchains_home = /tmp/Toolchains
 
 """
+
+# How the configuration is found:
+# 1. Start with empty 'tctconfig'
+# 2. Update with BUILTIN_CFG
+# 3. Update with /etc/tctconfig.cfg (if found)
+# 4. Update with ~/.tctconfig.cfg (if found). Set as FACTS['main_cfg_file']
+# 5. Update with ./tctconfig.cfg (if found)
 
 user_home = os.path.join(os.path.expanduser('~'))
 tctconfig_file_user = os.path.join(user_home, '.tctconfig.cfg')
@@ -41,10 +53,12 @@ tctconfig_file_user = os.path.join(user_home, '.tctconfig.cfg')
 io = StringIO.StringIO(BUILTIN_CFG)
 tctconfig = ConfigParser.RawConfigParser()
 tctconfig.readfp(io)
-tctconfig_files_successfully_read = tctconfig.read(['/etc/tctconfig.cfg',
+FACTS['config_files_parsed'] = tctconfig.read(['/etc/tctconfig.cfg',
                                                     tctconfig_file_user, 'tctconfig.cfg'])
-tctconfig_user = ConfigParser.RawConfigParser()
-result = tctconfig_user.read(tctconfig_file_user)
+# consider the user cfg file to be 'main'
+tctconfig_main = ConfigParser.RawConfigParser()
+if len(tctconfig_main.read(tctconfig_file_user)):
+    FACTS['main_cfg_file'] = tctconfig_file_user
 
 try:
     items = tctconfig.items('general')
@@ -60,31 +74,53 @@ CONTEXT_SETTINGS = {'default_map': ctx}
 @click.option('--temp-home', default='/tmp/tct',
               metavar='PATH', help='Root folder for tempfiles')
 @click.option('--config', '-c', nargs=2, multiple=True,
-              metavar='KEY VALUE', help='Define or override config key-value pair (repeatable)')
+              metavar='KEY VALUE', help='Define or override config key-value pair (repeatable, '
+                                        'passed in FACTS to the toolchain)')
 @click.option('--verbose', '-v', is_flag=True,
               help='Enable verbose mode.')
-@click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
+@click.option('--cfg-file', default=None,
+              metavar='PATH', help='Read all configuration from this file only. Don\'t use other \'tctconfig.cfg\' files.')
+@click.option('--active-section', default=None,
+              metavar='SECTION_NAME', help='Specifies which section of the cfg-file is to be used.')
 
 @click.version_option(__VERSION__)
-def cli(toolchains_home, config, verbose, temp_home, dump_params):
-    """tct, the toolchain tool, is a command line tool that travels a toolchain
-    folder alphabetically and topdown and runs each tool it finds.
+def cli(toolchains_home, config, verbose, temp_home, cfg_file, active_section):
+    """TCT, the toolchain tool, runs all tools of a folder and its subfolders.
 
-    Tools are executable files with a name starting with 'run_'.
-    Files are run first. Then processing continues with the next (sub)folder.
-    When a tool fails (exitcode != 0) processing stops for the current folder
-    and its subfolders. It continues with the next folder in order.
+    It travels the folder in alphabetical order and topdown. A tool is an
+    executable file of any kind that has a name starting with 'run_'. Files are
+    run first followed by subfolders. If a tool fails (exitcode != 0) processing
+    stops for the rest of that folder and continues with the next. An exitcode
+    >= 90 will stop all further processing of the toolchain.
 
     Use --help with the subcommands.
-    """
 
+    """
+    global tctconfig_main
+    if cfg_file:
+        tctconfig = ConfigParser.RawConfigParser()
+        FACTS['config_files_parsed'] = tctconfig.read(cfg_file)
+        try:
+            items = tctconfig.items('general')
+        except ConfigParser.NoSectionError:
+            items = []
+        for key, value in items:
+            CONTEXT_SETTINGS['default_map'][key] = value
+        if not active_section:
+            active_section = CONTEXT_SETTINGS['default_map'].get('active_section')
+        # An explicitely specified file will be the main file
+        FACTS['main_cfg_file'] = cfg_file
+        tctconfig_main = tctconfig
+
+    if not active_section:
+        active_section = 'default'
+    FACTS['active_section'] = active_section
     FACTS['argv0'] = sys.argv[0] if len(sys.argv) else ''
     FACTS['cmdline'] = ' '.join(sys.argv)
     FACTS['cwd'] = os.path.abspath(os.getcwd())
     FACTS['toolchains_home'] = os.path.abspath(os.path.normpath(toolchains_home))
     FACTS['verbose'] = verbose
     FACTS['temp_home'] = os.path.abspath(os.path.normpath(temp_home))
-    FACTS['dump_params'] = dump_params
     FACTS['run_id'] = logstamp_finegrained()
     for key, value in config:
         FACTS[key] = value
@@ -111,9 +147,11 @@ def possibly_dump_params():
 
 
 @cli.command()
-def list():
+@click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
+def list(dump_params):
     """List available toolchains."""
 
+    FACTS['dump_params'] = dump_params
     possibly_dump_params()
     verbose = FACTS['verbose']
     if verbose:
@@ -134,13 +172,16 @@ def list():
 
 
 @cli.command()
-@click.option('--dry-run', '-n', is_flag=True, help='Perform a trial run with no changes made.')
-def clean(dry_run):
+@click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
+@click.option('--yes', is_flag=True, prompt='CLEAN the whole temp folder - really?')
+def clean(dump_params, yes):
     """Clean the temp folder."""
 
-    FACTS['clean_command'] = dict(dry_run=dry_run)
+    FACTS['clean_command'] = dict(dry_run=not yes)
+    FACTS['dump_params'] = dump_params
     possibly_dump_params()
-    live_run = not dry_run
+    live_run = yes
+    dry_run = not live_run
     verbose = FACTS['verbose']
     temp_home = FACTS['temp_home']
 
@@ -216,13 +257,15 @@ def clean(dry_run):
 @click.option('--toolchain-action', '-T', multiple=True,
               metavar='ACTION',
               help='Tell the toolchain to execute the action. (repeatable)')
-def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but):
+@click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
+def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but, dump_params):
     """Run a toolchain.
 
     TOOLCHAIN is the name of the toolchain to be run. It must either be the name of
     a subfolder in TOOLCHAINS_HOME or an absolute path to the toolchain folder.
     """
 
+    FACTS['dump_params'] = dump_params
     FACTS['toolchain_name'] = toolchain
     FACTS['toolchain_folder'] = os.path.join(FACTS['toolchains_home'], toolchain)
     FACTS['toolchain_help'] = toolchain_help
@@ -233,6 +276,8 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but)
     factsfile = os.path.join(workdir_home, 'facts.json')
     milestonesfile = os.path.join(workdir_home, 'milestones.json')
     binabspath = FACTS['binabspath']
+
+    possibly_dump_params()
 
     if clean_but is not None:
         parts = FACTS['toolchain_temp_home'].split('/')
@@ -468,63 +513,92 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but)
 
 @cli.group()
 def config():
-    """Handle the USER configuration file ~/.tctconfig.cfg"""
+    """List and get cfg data. Update the main cfg file."""
 
 @config.command()
-def list():
+@click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
+def list(dump_params):
     """Print configuration to stdout."""
+
+    FACTS['dump_params'] = dump_params
+    possibly_dump_params()
+
     buf = StringIO.StringIO()
     tctconfig.write(buf)
     click.echo(buf.getvalue().strip('\n'))
 
     if FACTS.get('verbose'):
         click.echo('Possible locations: %r' % ['BUILTIN', '/etc/tctconfig.cfg', tctconfig_file_user, 'tctconfig.cfg'])
-        click.echo('Locations read from: %r' % tctconfig_files_successfully_read)
+        click.echo('Locations read from: %r' % FACTS['config_files_parsed'])
 
 @config.command()
 @click.argument('key')
 @click.option('--section', '-s', default='general', help="The section name. Defaults to 'general'")
-def get(key, section):
-    """Get the value for KEY from configuration file."""
+@click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
+def get(key, section, dump_params):
+    """Get the value for KEY from the ASSEMBLED configuration."""
+
+    FACTS['dump_params'] = dump_params
+    possibly_dump_params()
 
     try:
-        result = tctconfig_user.get(section, key)
+        result = tctconfig.get(section, key)
     except ConfigParser.NoOptionError:
-        result = 'Error: Option not found.'
+        result = 'KEY not found'
     click.echo(result)
 
 
 @config.command()
 @click.argument('key')
 @click.option('--section', '-s', default='general', help="The section name. Defaults to 'general'")
-def remove(key, section):
-    """Remove KEY from the given section of the configuration file."""
+@click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
+def remove(key, section, dump_params):
+    """Remove KEY of section from THE MAIN configuration file."""
 
-    removed = False
-    try:
-        removed = tctconfig_user.remove_option(section, key)
-    except ConfigParser.NoSectionError:
-        pass
-    if removed:
-        with file(tctconfig_file_user, 'w') as f2:
-            tctconfig_user.write(f2)
+    global tctconfig_main
+    FACTS['dump_params'] = dump_params
+    possibly_dump_params()
+
+    if FACTS['main_cfg_file']:
+        removed = False
+        try:
+            removed = tctconfig_main.remove_option(section, key)
+        except ConfigParser.NoSectionError:
+            pass
+        if removed:
+            with file(FACTS['main_cfg_file'], 'w') as f2:
+                tctconfig_main.write(f2)
+            click.echo('Removed from section \'%s\' of \'%s\'.' % (section, FACTS['main_cfg_file']))
+        else:
+            click.echo('Not found in section \'%s\' of \'%s\'.' % (section, FACTS['main_cfg_file']))
+    else:
+        click.echo('There is no \'main_cfg_file\'')
 
 
 @config.command()
 @click.argument('key')
 @click.argument('value')
 @click.option('--section', '-s', default='general', help="The section name. Defaults to 'general'")
-def set(key, value, section):
-    """Set VALUE for KEY in configuration file."""
+@click.option('--dump-params', '-D', is_flag=True, help='Dump parameters and exit.')
+def set(key, value, section, dump_params):
+    """Set VALUE for KEY in main configuration file."""
 
-    if not section in tctconfig_user.sections():
-        tctconfig_user.add_section(section)
-    tctconfig_user.set(section, key, value)
-    with file(tctconfig_file_user,'w') as f2:
-        tctconfig_user.write(f2)
+    global tctconfig_main
+    FACTS['dump_params'] = dump_params
+    possibly_dump_params()
+
+    if FACTS['main_cfg_file']:
+        if not section in tctconfig_main.sections():
+            tctconfig_main.add_section(section)
+        tctconfig_main.set(section, key, value)
+        with file(FACTS['main_cfg_file'], 'w') as f2:
+            tctconfig_main.write(f2)
+        click.echo('Updated \'%s\' in section \'%s\' of \'%s\'.' % (key, section, FACTS['main_cfg_file']))
+    else:
+        click.echo('There is no \'main_cfg_file\'')
 
 
-if __name__ == "__main__":
+if 1 and __name__ == "__main__":
     # while developing: Simulate commandline parameters
     # assume cwd=/home/marble/Repositories/mbnas/mbgit/tct, so ../Makedirs/manual_gettingstarted.make is correct
 
@@ -535,12 +609,23 @@ if __name__ == "__main__":
             '-v run RenderDocumentation '
             # '-c makedir ../Makedirs/manual_gettingstarted.make '
             # '-c makedir /home/marble/Repositories/mbnas/mbgit/Makedirs/Public-Info-000.make '
-            '-c makedir /home/marble/Repositories/mbnas/mbgit/Makedirs/ext_sphinx.make '
+            # '-c makedir /home/marble/Repositories/mbnas/mbgit/Makedirs/ext_sphinx.make '
+            # '-c makedir /home/marble/Repositories/mbnas/mbgit/Makedirs/manual_sphinx.make-fr_FR '
+            # '-c makedir /home/marble/Repositories/mbnas/mbgit/Makedirs/manual_sphinx.make '
+            # '-c makedir /home/marble/Repositories/mbnas/mbgit/Makedirs/manual_sphinx-from-ter.make '
+            '-c makedir /home/marble/Repositories/mbnas/mbgit/Makedirs/00makedir '
+            # '-c giturl https://github.com/kaystrobach/TYPO3.dyncss '
+            # '-c gitdir /tmp/T3REPOS/https-github-com-kaystrobach-TYPO3-dyncss '
+            '-c giturl https://github.com/kaystrobach/FLOW.Developmenttools '
+            '-c giturl https://git.typo3.org/TYPO3CMS/Extensions/extension_builder '
             '-c email_admin_send_extra_mail 1 '
             '-c email_user_do_not_send 1 '
             '-c rebuild_needed 1 '
             '-c talk 2 '
-            '-c make_singlehtml 1 '
-            '-c make_latex 1 '
+            '-c make_singlehtml 0 '
+            '-c make_latex 0 '
             '-c make_package 1 ').split(' ') if e]
+    cli()
+
+elif __name__ == "__main__":
     cli()
