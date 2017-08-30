@@ -1,0 +1,2 @@
+2017-08-30            [RELEASE] v0.2.0
+2017-08-30  48fb96e2  Merge develop
