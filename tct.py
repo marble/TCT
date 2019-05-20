@@ -2,8 +2,9 @@
 # coding: utf-8
 
 from __future__ import print_function
+from __future__ import absolute_import
 import click
-import ConfigParser
+import six.moves.configparser
 import cStringIO as StringIO
 import os
 import shutil
@@ -11,15 +12,16 @@ import subprocess
 import sys
 
 from tctlib import *
+import six
 
-__VERSION__ = '0.2.0'
+__VERSION__ = '0.3.0'
 
 PY3 = sys.version_info[0] == 3
 
 if PY3:
     string_types = str,
 else:
-    string_types = basestring,
+    string_types = six.string_types,
 
 FACTS = {}
 INITIAL_MILESTONES = {}
@@ -51,18 +53,18 @@ user_home = os.path.join(os.path.expanduser('~'))
 tctconfig_file_user = os.path.join(user_home, '.tctconfig.cfg')
 
 io = StringIO.StringIO(BUILTIN_CFG)
-tctconfig = ConfigParser.RawConfigParser()
+tctconfig = six.moves.configparser.RawConfigParser()
 tctconfig.readfp(io)
 FACTS['config_files_parsed'] = tctconfig.read(['/etc/tctconfig.cfg',
                                                     tctconfig_file_user, 'tctconfig.cfg'])
 # consider the user cfg file to be 'main'
-tctconfig_main = ConfigParser.RawConfigParser()
+tctconfig_main = six.moves.configparser.RawConfigParser()
 if len(tctconfig_main.read(tctconfig_file_user)):
     FACTS['main_cfg_file'] = tctconfig_file_user
 
 try:
     items = tctconfig.items('general')
-except ConfigParser.NoSectionError:
+except six.moves.configparser.NoSectionError:
     items = []
 ctx = {}
 for key, value in items:
@@ -98,11 +100,11 @@ def cli(toolchains_home, config, verbose, temp_home, cfg_file, active_section):
     """
     global tctconfig_main
     if cfg_file:
-        tctconfig = ConfigParser.RawConfigParser()
+        tctconfig = six.moves.configparser.RawConfigParser()
         FACTS['config_files_parsed'] = tctconfig.read(cfg_file)
         try:
             items = tctconfig.items('general')
-        except ConfigParser.NoSectionError:
+        except six.moves.configparser.NoSectionError:
             items = []
         for key, value in items:
             CONTEXT_SETTINGS['default_map'][key] = value
@@ -543,7 +545,7 @@ def get(key, section, dump_params):
 
     try:
         result = tctconfig.get(section, key)
-    except ConfigParser.NoOptionError:
+    except six.moves.configparser.NoOptionError:
         result = 'KEY not found'
     click.echo(result)
 
@@ -563,10 +565,10 @@ def remove(key, section, dump_params):
         removed = False
         try:
             removed = tctconfig_main.remove_option(section, key)
-        except ConfigParser.NoSectionError:
+        except six.moves.configparser.NoSectionError:
             pass
         if removed:
-            with file(FACTS['main_cfg_file'], 'w') as f2:
+            with open(FACTS['main_cfg_file'], 'w') as f2:
                 tctconfig_main.write(f2)
             click.echo('Removed from section \'%s\' of \'%s\'.' % (section, FACTS['main_cfg_file']))
         else:
@@ -591,14 +593,14 @@ def set(key, value, section, dump_params):
         if not section in tctconfig_main.sections():
             tctconfig_main.add_section(section)
         tctconfig_main.set(section, key, value)
-        with file(FACTS['main_cfg_file'], 'w') as f2:
+        with open(FACTS['main_cfg_file'], 'w') as f2:
             tctconfig_main.write(f2)
         click.echo('Updated \'%s\' in section \'%s\' of \'%s\'.' % (key, section, FACTS['main_cfg_file']))
     else:
         click.echo('There is no \'main_cfg_file\'')
 
 
-if 1 and __name__ == "__main__":
+if 0 and __name__ == "__main__":
     # while developing: Simulate commandline parameters
     # assume cwd=/home/marble/Repositories/mbnas/mbgit/tct, so ../Makedirs/manual_gettingstarted.make is correct
 

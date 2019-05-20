@@ -1,13 +1,15 @@
+from __future__ import absolute_import
 from setuptools import setup
 
 setup(
     name='TCT Toolchain Tool',
-    version='0.1.5',
+    version='0.3.0',
     py_modules=['tct'],
     packages= ['tctlib'],
     include_package_data=True,
     install_requires=[
-        'click', 'pyyaml'
+        'click',
+        'pyyaml',
     ],
     entry_points='''
         [console_scripts]

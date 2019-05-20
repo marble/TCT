@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from cStringIO import StringIO
 import codecs
 import datetime
@@ -37,13 +38,13 @@ def finder(dirpath):
     return finder1
 
 def deepget(dictionary, *keys, **kwargs):
-    if kwargs.has_key('default'):
+    if 'default' in kwargs:
         default = kwargs['default']
     else:
         default = {}
     result = dictionary
     for k in keys:
-        if result.has_key(k):
+        if k in result:
             result = result[k]
         else:
             result = default
