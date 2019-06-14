@@ -464,7 +464,7 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but,
         msec_tool_end = msecstamp_tool_end - MSECSTAMP_TCT_START
 
         if verbose:
-            click.echo('   exitcode: %3s    %8s msec)' % (exitcode, msec_tool_duration))
+            click.echo('   exitcode: %3s      %8s ms' % (exitcode, msec_tool_duration))
 
         stats_exitcodes[exitcode] = stats_exitcodes.get(exitcode, 0) + 1
 
