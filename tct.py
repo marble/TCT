@@ -10,11 +10,12 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 from tctlib import *
 import six
 
-__VERSION__ = '0.3.0'
+__VERSION__ = '0.4.0'
 
 PY3 = sys.version_info[0] == 3
 
@@ -23,6 +24,7 @@ if PY3:
 else:
     string_types = six.string_types,
 
+MSECSTAMP_TCT_START = int(time.time() * 1000)
 FACTS = {}
 INITIAL_MILESTONES = {}
 INITIAL_RESULT = {'FACTS':[], 'MILESTONES':[], 'loglist': []}
@@ -444,6 +446,7 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but,
 
         # START the tool
 
+        msecstamp_tool_start = int(time.time() * 1000)
 
         if cmd[0].endswith('.py'):
             # If tool is a Python script we explicitly run it like 'python tool.py params ...' because
@@ -455,8 +458,13 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but,
             # If tool is not a Python script let the shell find out how to run the tool.
             exitcode = subprocess.call(cmd, shell=True, cwd=workdir)
 
+        msecstamp_tool_end = int(time.time() * 1000)
+        msec_tool_duration = msecstamp_tool_end - msecstamp_tool_start
+        msec_tool_start = msecstamp_tool_start - MSECSTAMP_TCT_START
+        msec_tool_end = msecstamp_tool_end - MSECSTAMP_TCT_START
+
         if verbose:
-            click.echo('   exitcode: %s' % exitcode)
+            click.echo('   exitcode: %s   (%s msec)' % (exitcode, msec_tool_duration))
 
         stats_exitcodes[exitcode] = stats_exitcodes.get(exitcode, 0) + 1
 
@@ -470,6 +478,9 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but,
         milestones['tools_facts'] = milestones.get('tools_facts', {})
         milestones['tools_exitcodes'][tool_id] = exitcode
         milestones['tools_facts'][toolrelpath] = result.get('FACTS')
+        tools_milliseconds = milestones.get('tools_milliseconds', {})
+        tools_milliseconds[tool_id] = (msec_tool_start, msec_tool_end, msec_tool_duration)
+        milestones['tools_milliseconds'] = tools_milliseconds
 
         writejson(facts, factsfile)
 
