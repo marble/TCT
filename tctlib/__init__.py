@@ -105,3 +105,20 @@ def versiontuple(v, n=12):
       filled.append(point.zfill(n))
    return tuple(filled)
 
+def save_the_result(result, resultfile, params, facts, exitcode, CONTINUE):
+
+    k1 = 'MILESTONES'
+    if not k1 in result:
+        result[k1] = {}
+
+    k2 = 'tool_exitcodes_2'
+    if not k2 in result[k1]:
+        result[k1][k2] = {}
+
+    k3 = params['toolrelpath']
+    result[k1][k2][k3] = (exitcode, CONTINUE)
+
+    writejson(result, resultfile)
+
+    return True
+
