@@ -108,17 +108,13 @@ def versiontuple(v, n=12):
 
 def save_the_result(result, resultfile, params, facts, exitcode, CONTINUE):
 
-    MILESTONES = result.get('MILESTONES', {})
+    MILESTONES = result.get('MILESTONES', [])
     result['MILESTONES'] = MILESTONES
 
     k3 = params['toolrelpath']
     v3 = (exitcode, CONTINUE)
-    k2 = 'tool_exitcodes_2'
-    v2 = {k3: v3}
-    if isinstance(MILESTONES, list):
-        MILESTONES.append({k2:v2})
-    elif isinstance(MILESTONES, dict):
-        MILESTONES[k2] = v2
+
+    MILESTONES.append({'tool_exitcodes_2': {k3, v3}})
 
     writejson(result, resultfile)
 
