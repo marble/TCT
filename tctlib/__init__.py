@@ -6,7 +6,7 @@ import json
 import os
 import time
 
-__all__ =  [
+__all__ = [
     'data2json',
     'deepget',
     'finder',
@@ -15,6 +15,7 @@ __all__ =  [
     'make_snapshot_of_milestones',
     'msecs',
     'readjson',
+    'save_the_result',
     'versiontuple',
     'writejson',
 ]
