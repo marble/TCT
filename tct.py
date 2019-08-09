@@ -15,7 +15,7 @@ import time
 from tctlib import *
 import six
 
-__VERSION__ = '0.4.0'
+__VERSION__ = '1.0.0'
 
 PY3 = sys.version_info[0] == 3
 
