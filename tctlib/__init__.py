@@ -108,7 +108,7 @@ def versiontuple(v, n=12):
 
 def save_the_result(result, resultfile, params, facts, milestones, exitcode, CONTINUE):
     tool_exitcodes_2 = milestones.get('tool_exitcodes_2', {})
-    k = params['toolrelpath']
+    k = '%s/%s' % (params['toolrelpath'], params['toolname'])
     tool_exitcodes_2[k] = '%s,%s' % (exitcode, CONTINUE)
     result['MILESTONES'].append({'tool_exitcodes_2': tool_exitcodes_2})
     writejson(result, resultfile)
