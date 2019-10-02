@@ -15,7 +15,7 @@ import time
 from tctlib import *
 import six
 
-__VERSION__ = '1.0.0'
+__VERSION__ = '1.0.1'
 
 PY3 = sys.version_info[0] == 3
 
@@ -356,6 +356,7 @@ def run(toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but,
     lasttoolrelpath = None
     skipping = False
     exitcode = 0
+    final_exitcode = None
     for depth, toolchainroot, toolrelpath, toolname, toolabspath in finder(FACTS['toolchain_folder'])():
         # skipping means: Skip all the rest in the current folder, including subfolders
         if skipping:

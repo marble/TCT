@@ -1,5 +1,12 @@
-Release 1.0.0 (to be released)
-==============================
+Release 1.0.1 (released Oct 2, 2019)
+====================================
+
+* bugfix: define 'final_exitcode'
+
+
+
+Release 1.0.0 (Aug 19, 2019)
+============================
 
 * Add 'save_the_result()'
 * Used in toolchain >=v2.7.0
