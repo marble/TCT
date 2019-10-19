@@ -1,8 +1,8 @@
-1.0.1
+1.1.0-dev
 
 Update the version number in:
 
 - VERSION.txt
 - setup.py
 - tct.py
-- ChangeLog.txt
+- CHANGES.rst
