@@ -1,5 +1,5 @@
-Release 1.1.0-dev (to be released)
-==================================
+Release 1.1.0 (released Oct 21, 2019)
+=====================================
 
 * Feature: add parameter 'reason' for 'tool_exitcodes_2'
 
