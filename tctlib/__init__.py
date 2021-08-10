@@ -1,9 +1,14 @@
 from __future__ import absolute_import
-from cStringIO import StringIO
+
+try:
+    from io import StringIO
+except ImportError:
+    from cStringIO import StringIO
 import codecs
 import datetime
 import json
 import os
+import sys
 import time
 
 __all__ = [
@@ -14,11 +19,14 @@ __all__ = [
     "logstamp_finegrained",
     "make_snapshot_of_milestones",
     "msecs",
+    "PY3",
     "readjson",
     "save_the_result",
     "versiontuple",
     "writejson",
 ]
+
+PY3 = sys.version_info[0] == 3
 
 
 def finder(dirpath):
