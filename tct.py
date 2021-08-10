@@ -5,7 +5,11 @@ from __future__ import print_function
 from __future__ import absolute_import
 import click
 import six.moves.configparser
-import cStringIO as StringIO
+
+try:
+    from io import StringIO
+except ImportError:
+    from cStringIO import StringIO
 import os
 import shutil
 import subprocess
@@ -54,9 +58,10 @@ toolchains_home = /tmp/Toolchains
 user_home = os.path.join(os.path.expanduser("~"))
 tctconfig_file_user = os.path.join(user_home, ".tctconfig.cfg")
 
-io = StringIO.StringIO(BUILTIN_CFG)
+io = StringIO(BUILTIN_CFG)
 tctconfig = six.moves.configparser.RawConfigParser()
-tctconfig.readfp(io)
+mthd = getattr(tctconfig, "read_file") or getattr(tctconfig, "readfp")
+mthd(io)
 FACTS["config_files_parsed"] = tctconfig.read(
     ["/etc/tctconfig.cfg", tctconfig_file_user, "tctconfig.cfg"]
 )
@@ -151,6 +156,8 @@ def cli(toolchains_home, config, verbose, temp_home, cfg_file, active_section):
     FACTS["python_exe_abspath"] = subprocess.check_output(
         "which python", shell=True
     ).strip()
+    if PY3 and type(FACTS["python_exe_abspath"]) == bytes:
+        FACTS["python_exe_abspath"] = FACTS["python_exe_abspath"].decode("utf-8")
 
     # FACTS['binabspath']:  '/.../tct/venv/bin/' is what we are looking for
     if __name__ == "__main__":
@@ -598,7 +605,7 @@ def list(dump_params):
     FACTS["dump_params"] = dump_params
     possibly_dump_params()
 
-    buf = StringIO.StringIO()
+    buf = StringIO()
     tctconfig.write(buf)
     click.echo(buf.getvalue().strip("\n"))
 
