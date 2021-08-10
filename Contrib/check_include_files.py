@@ -32,7 +32,7 @@ Exitcodes::
 
 """
 
-__version__ = '0.2.0'
+__version__ = "0.2.0"
 __history__ = ""
 __copyright__ = """\
 
@@ -73,8 +73,10 @@ notreadablefiles = []
 # PATHPARTS = splitpath(startdir)
 # N_PARTS = len(PATHPARTS)
 
+
 def normalizepath(p):
     return os.path.normcase(os.path.realpath(p))
+
 
 def splitpath(p):
     """Split a path to a list of its parts
@@ -97,6 +99,7 @@ def splitpath(p):
             result.insert(0, left)
         break
     return result
+
 
 def processRstFile(filepath, parents=None, recurse=1):
     """Check a ReST source file.
@@ -128,19 +131,21 @@ def processRstFile(filepath, parents=None, recurse=1):
             f1 = file(restfile)
             strdata = f1.read()
             f1.close()
-        elif ospe(restfile.decode('utf-8', 'replace')):
-            f1 = file(restfile.decode('utf-8', 'replace'))
+        elif ospe(restfile.decode("utf-8", "replace")):
+            f1 = file(restfile.decode("utf-8", "replace"))
             strdata = f1.read()
             f1.close()
         else:
             if not restfile in notreadablefiles:
                 notreadablefiles.append(restfile)
 
-        if 1 and ok and strdata and 'look for ``.. include::`` directives':
+        if 1 and ok and strdata and "look for ``.. include::`` directives":
             # '\n .. include:: abc.txt \n\n  .. include:: abc.txt'
-            filenames = re.findall('^\s*\.\.\s+include::\s*(\S+)\s*$', strdata, flags=+re.MULTILINE)
+            filenames = re.findall(
+                "^\s*\.\.\s+include::\s*(\S+)\s*$", strdata, flags=+re.MULTILINE
+            )
             for filename in filenames:
-                if filename[0] == '<':
+                if filename[0] == "<":
                     parents.append(restfile)
                     forbiddenfiles.append(filename)
                     forbiddenfilesparents.append(parents)
@@ -159,11 +164,13 @@ def processRstFile(filepath, parents=None, recurse=1):
                         break
                     else:
                         parents.pop()
-        if 1 and ok and strdata and 'look for ``.. literalinclude::`` directives':
+        if 1 and ok and strdata and "look for ``.. literalinclude::`` directives":
             # '\n .. literalinclude:: code.js \n\n  .. literalinclude:: code.php'
-            filenames = re.findall('^\s*\.\.\s+literalinclude::\s*(\S+)\s*$', strdata, flags=+re.MULTILINE)
+            filenames = re.findall(
+                "^\s*\.\.\s+literalinclude::\s*(\S+)\s*$", strdata, flags=+re.MULTILINE
+            )
             for filename in filenames:
-                if filename[0] == '<':
+                if filename[0] == "<":
                     parents.append(restfile)
                     forbiddenfiles.append(filename)
                     forbiddenfilesparents.append(parents)
@@ -185,6 +192,7 @@ def processRstFile(filepath, parents=None, recurse=1):
 
     return ok, parents
 
+
 def main(startdir):
     ok = True
     for path, dirs, files in os.walk(startdir):
@@ -192,7 +200,7 @@ def main(startdir):
         files.sort()
         for fname in files:
             stem, ext = os.path.splitext(fname)
-            if ext == '.rst':
+            if ext == ".rst":
                 f1path = ospj(path, fname)
                 ok, parents = processRstFile(f1path)
             if not ok:
@@ -200,6 +208,7 @@ def main(startdir):
         if not ok:
             break
     return ok, parents
+
 
 def removestartdir(fname):
     L = splitpath(fname)
@@ -210,54 +219,55 @@ def removestartdir(fname):
         result = fname
     return result
 
+
 def printresult():
     print
 
-    print 'observed files:'
-    print '==============='
+    print "observed files:"
+    print "==============="
     if checkedfiles:
         for f in checkedfiles:
             print removestartdir(f)
     else:
-        print 'None.'
+        print "None."
     print
 
-    print 'observed include files:'
-    print '======================='
+    print "observed include files:"
+    print "======================="
     if checkedincludefiles:
         for f in checkedincludefiles:
             print removestartdir(f)
     else:
-        print 'None.'
+        print "None."
     print
 
-    print 'include files that could not be read (= no error):'
-    print '=================================================='
+    print "include files that could not be read (= no error):"
+    print "=================================================="
     if notreadablefiles:
         for f in notreadablefiles:
             print removestartdir(f)
     else:
-        print 'None.'
+        print "None."
     print
 
-    print 'forbidden include files:'
-    print '========================'
+    print "forbidden include files:"
+    print "========================"
     if forbiddenfilesparents:
         for i, parents in enumerate(forbiddenfilesparents):
             j = 0
             for j in range(len(parents)):
                 if j == 0:
-                    indent = ''
+                    indent = ""
                 else:
-                    indent = ('    '*(j-1)) + '|-- '
+                    indent = ("    " * (j - 1)) + "|-- "
                 fname = removestartdir(parents[j])
-                print '%s%s' % (indent, fname)
+                print "%s%s" % (indent, fname)
             j += 1
-            indent = ('    '*(j-1)) + '|-- '
+            indent = ("    " * (j - 1)) + "|-- "
             fname = removestartdir(forbiddenfiles[i])
-            print '%s%s' % (indent, fname)
+            print "%s%s" % (indent, fname)
     else:
-        print 'None.'
+        print "None."
     print
 
 
@@ -280,14 +290,34 @@ def get_argparse_args():
             print __doc__
             parser.exit()
 
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0], add_help=False)
-    parser.add_argument('--verbose', '-v', help='verbose - list filenames', dest='verbose', action='store_true')
-    parser.add_argument('--help', '-h', action='help', default=argparse.SUPPRESS, help='show this help message and exit')
-    parser.add_argument('--info', help='show information and exit', nargs=0, action=Info)
-    parser.add_argument('--version', help='show version and exit', action='version', version=__version__)
-    parser.add_argument('--license', help='show license and exit', nargs=0, action=License)
+    parser = argparse.ArgumentParser(
+        description=__doc__.splitlines()[0], add_help=False
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        help="verbose - list filenames",
+        dest="verbose",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--help",
+        "-h",
+        action="help",
+        default=argparse.SUPPRESS,
+        help="show this help message and exit",
+    )
+    parser.add_argument(
+        "--info", help="show information and exit", nargs=0, action=Info
+    )
+    parser.add_argument(
+        "--version", help="show version and exit", action="version", version=__version__
+    )
+    parser.add_argument(
+        "--license", help="show license and exit", nargs=0, action=License
+    )
     # parser.add_argument('--history', help='show history', nargs=0, action=History)
-    parser.add_argument('startdir')
+    parser.add_argument("startdir")
     return parser.parse_args()
 
 
@@ -298,18 +328,21 @@ class Namespace(object):
         for name in kwargs:
             setattr(self, name, kwargs[name])
 
+
 if __name__ == "__main__":
     # sys.argv = sys.argv[:1] + [r'D:\kannweg\TO_BE_DELETED_HACKS_XAVIER\Documentation', '-v']
 
     argparse_available = False
     try:
         import argparse
+
         argparse_available = True
     except ImportError:
         pass
     if not argparse_available:
         try:
             import local_argparse as argparse
+
             argparse_available = True
         except ImportError:
             pass
@@ -317,13 +350,16 @@ if __name__ == "__main__":
         args = get_argparse_args()
     else:
         args = Namespace()
-        args.startdir = ''
+        args.startdir = ""
     if not args.startdir:
-        msg = ("\nNote:\n"
-               "   '%(prog)s'\n"
-               "   needs module 'argparse' (Python >= 2.7) to handle commandline\n"
-               "   parameters. It seems that 'argparse' is not available. Provide\n"
-               "   module 'argparse' or hardcode parameters in the code instead (exitcode=2).\n" % {'prog': sys.argv[0]} )
+        msg = (
+            "\nNote:\n"
+            "   '%(prog)s'\n"
+            "   needs module 'argparse' (Python >= 2.7) to handle commandline\n"
+            "   parameters. It seems that 'argparse' is not available. Provide\n"
+            "   module 'argparse' or hardcode parameters in the code instead (exitcode=2).\n"
+            % {"prog": sys.argv[0]}
+        )
         print msg
         sys.exit(2)
     if not os.path.isdir(args.startdir):
