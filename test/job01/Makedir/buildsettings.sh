@@ -3,13 +3,13 @@
 # Mandatory. We need one of these. Used in this order.
 TER_EXTKEY=
 GITURL=
-GITDIR=/PROJECT
+GITDIR=/home/marble/Repositories/github.com/TYPO3-Documentation/sphinx_typo3_theme_rendering_test
 
 # keep these here like so
 PROJECT=project
 VERSION=0.0.0
 LOCALIZATION=default
-BUILDDIR=project/0.0.0
+BUILDDIR=Documentation-GENERATED-temp
 
 # More specs
 GITBRANCH=master

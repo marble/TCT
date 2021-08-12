@@ -12,16 +12,19 @@
 # (7) Settings from Settings.json                         (operator at runtime)
 
 import codecs
-import ConfigParser
 import json
 import os
-import sphinx_typo3_theme
-
 from os.path import exists as ospe, isabs, join as ospj, normpath, split as ospsplit
 
+import six.moves.configparser
+import sphinx_typo3_theme
+from pygments.lexers.web import PhpLexer
 # enable highlighting for PHP code not between <?php ... ?> by default
 from sphinx.highlighting import lexers
-from pygments.lexers.web import PhpLexer
+try:
+    from io import StringIO
+except ImportError:
+    from cStringIO import StringIO
 
 lexers["php"] = PhpLexer(startinline=True)
 lexers["php-annotations"] = PhpLexer(startinline=True)
@@ -54,20 +57,6 @@ US = user_settings = {}
 notes = {}
 
 
-class WithSection:
-    def __init__(self, fp, sectionname):
-        self.fp = fp
-        self.sectionname = sectionname
-        self.prepend = True
-
-    def readline(self):
-        if self.prepend:
-            self.prepend = False
-            return "[" + self.sectionname + "]\n"
-        else:
-            return self.fp.readline()
-
-
 #
 #
 #
@@ -75,11 +64,12 @@ class WithSection:
 # (1) MAKEDIR/buildsettings.sh
 #
 section = "build"
-config = ConfigParser.RawConfigParser()
+config = six.moves.configparser.RawConfigParser()
 f1name = "buildsettings.sh"
 with codecs.open(f1name, "r", "utf-8") as f1:
-    # ConfigParser needs a section. We don't have it. Let's invent one.
-    config.readfp(WithSection(f1, section))
+    data = f1.read()
+read_method = getattr(config, 'read_file', None) or getattr(config, 'readfp')
+read_method(StringIO(u"[" + section + u"]\n" + data))
 
 # Required:
 MASTERDOC = config.get(section, "MASTERDOC")
@@ -94,6 +84,7 @@ except:
     import inspect
 
     confpyabspath = os.path.abspath(inspect.getfile(inspect.currentframe()))
+
 confpyabspath = normpath(confpyabspath)
 confpyfolder = ospsplit(confpyabspath)[0]
 
@@ -127,7 +118,7 @@ def merge_settings_file(fpath, D, notes):
     if not ospe(fpath):
         return
     notes[os.path.split(fpath)[1]] = fpath
-    config = ConfigParser.RawConfigParser()
+    config = six.moves.configparser.RawConfigParser()
     config.readfp(codecs.open(fpath, "r", "utf-8"))
     for s in config.sections():
         D[s] = D.get(s, {})
@@ -464,6 +455,7 @@ for k in [
     "config",
     "contents",
     "D",
+    "data",
     "e",
     "extensions_to_be_loaded",
     "f1",
@@ -473,6 +465,7 @@ for k in [
     "o",
     "plantumlfolder",
     "plantumlstylesabspath",
+    "read_method",
     "s",
     "section",
     "US",
@@ -484,28 +477,28 @@ for k in [
 ]:
     if k in G:
         del G[k]
-del k, G
+del k
+
+def json_serializable(obj):
+    try:
+        json.dumps(obj)
+        return True
+    except TypeError:
+        return False
 
 if 1 and "dump resulting settings as json":
     # This dumpy is important, as the Docker container refers to it to report
     # back what happened during the build.
     settingsDumpJsonFile = logdirabspath + "/Settings.dump.json"
-    D = {}
-    for k, v in globals().items():
-        if k in ["k", "D", "v"]:
-            continue
-        try:
-            json.dumps(globals()[k])
-            D[k] = v
-        except:
-            pass
     with codecs.open(settingsDumpJsonFile, "w", "utf-8") as f2:
-        json.dump(D, f2, indent=4, sort_keys=True)
-    del D, settingsDumpJsonFile
+        json.dump(
+            {k:v for k, v in list(globals().items()) if k not in ["G"] and json_serializable(v)},
+            f2, indent=4, sort_keys=True)
+    del settingsDumpJsonFile
 
-if "notes" in globals():
+if "notes" in G:
     del notes
-
+del globals()["G"]
 
 # From Sphinx "Extensions to theme docs"
 def setup(app):
