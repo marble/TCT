@@ -1,3 +1,10 @@
+Release 1.2-dev (released Aug 12, 2021)
+=======================================
+
+* Port to Python-3 and keep compatibility with Python-2
+
+
+
 Release 1.1.0 (released Oct 21, 2019)
 =====================================
 

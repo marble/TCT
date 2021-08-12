@@ -19,7 +19,7 @@ import time
 from tctlib import *
 import six
 
-__VERSION__ = "1.1.0"
+__VERSION__ = "1.2-dev"
 
 PY3 = sys.version_info[0] == 3
 
