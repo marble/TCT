@@ -40,7 +40,7 @@ FACTS["initial_working_dir"] = os.path.abspath(os.getcwd())
 
 INITIAL_MILESTONES["dummy"] = 1
 
-BUILTIN_CFG = """
+BUILTIN_CFG = u"""
 
 [general]
 temp_home = /tmp/TCT
@@ -60,7 +60,7 @@ tctconfig_file_user = os.path.join(user_home, ".tctconfig.cfg")
 
 io = StringIO(BUILTIN_CFG)
 tctconfig = six.moves.configparser.RawConfigParser()
-mthd = getattr(tctconfig, "read_file") or getattr(tctconfig, "readfp")
+mthd = getattr(tctconfig, "read_file", None) or getattr(tctconfig, "readfp")
 mthd(io)
 FACTS["config_files_parsed"] = tctconfig.read(
     ["/etc/tctconfig.cfg", tctconfig_file_user, "tctconfig.cfg"]
@@ -586,6 +586,7 @@ def run(
         click.echo()
         click.echo("We saw these exitcodes (code, count):")
         click.echo(data2json(stats_exitcodes))
+
     if final_exitcode is not None:
         if verbose:
             click.echo("exiting with exitcode %s" % final_exitcode)

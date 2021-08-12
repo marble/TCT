@@ -1,19 +1,27 @@
 from __future__ import absolute_import
 
-try:
-    from io import StringIO
-except ImportError:
-    from cStringIO import StringIO
 import codecs
 import datetime
 import json
 import os
+import subprocess
 import sys
 import time
 
+try:
+    from io import StringIO
+except ImportError:
+    from cStringIO import StringIO
+
+# Keeplist for PyCharm's `optimize imports`:
+codecs, datetime, json, os, subprocess, sys, time, StringIO
+
+
 __all__ = [
+    "cmdline",
     "data2json",
     "deepget",
+    "execute_cmdlist",
     "finder",
     "logstamp",
     "logstamp_finegrained",
@@ -22,6 +30,8 @@ __all__ = [
     "PY3",
     "readjson",
     "save_the_result",
+    "StringIO",
+    "ustr",
     "versiontuple",
     "writejson",
 ]
@@ -123,9 +133,7 @@ def writejson(data, fpath):
 
 
 def data2json(data):
-    io = StringIO()
-    json.dump(data, io, sort_keys=True, indent=2, separators=(",", ": "))
-    return io.getvalue()
+    return json.dumps(data, sort_keys=True, indent=2, separators=(",", ": "))
 
 
 def versiontuple(v, n=12):
@@ -144,3 +152,54 @@ def save_the_result(
     result["MILESTONES"].append({"tool_exitcodes_2": tool_exitcodes_2})
     writejson(result, resultfile)
     return True
+
+
+def ustr(s, encoding='utf-8', errors='strict'):
+    result = s.decode(encoding, errors) if type(s) == bytes else s
+    return result
+
+
+def cmdline(cmd, cwd=None):
+    if cwd is None:
+        cwd = os.getcwd()
+    process = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=cwd
+    )
+    out, err = process.communicate()
+    out = ustr(out, errors='replace')
+    err = ustr(err, errors='replace')
+    exitcode = process.returncode
+    return exitcode, cmd, out, err
+
+
+class ExecuteParams:
+    toolname_pure = 'toolname_pure'
+    workdir = 'workdir'
+    xeq_name_cnt = 0
+
+
+def execute_cmdlist(cmdlist, cwd=None, ns=object()):
+    cmd = " ".join(cmdlist)
+    cmd_multiline = " \\\n   ".join(cmdlist) + "\n"
+
+    ns.xeq_name_cnt += 1
+    filename_cmd = "xeq-%s-%d-%s.txt" % (ns.toolname_pure, ns.xeq_name_cnt, "cmd")
+    filename_err = "xeq-%s-%d-%s.txt" % (ns.toolname_pure, ns.xeq_name_cnt, "err")
+    filename_out = "xeq-%s-%d-%s.txt" % (ns.toolname_pure, ns.xeq_name_cnt, "out")
+
+    with codecs.open(os.path.join(ns.workdir, filename_cmd), "w", "utf-8") as f2:
+        f2.write(ustr(cmd_multiline))
+
+    exitcode, cmd, out, err = cmdline(cmd, cwd=cwd)
+
+    ns.loglist.append({"exitcode": exitcode, "cmd": cmd, "out": out, "err": err})
+
+    with codecs.open(os.path.join(ns.workdir, filename_out), "w", "utf-8") as f2:
+        f2.write(out)
+
+    with codecs.open(os.path.join(ns.workdir, filename_err), "w", "utf-8") as f2:
+        f2.write(err)
+
+    return exitcode, cmd, out, err
+
+
