@@ -1,4 +1,4 @@
-1.2-dev
+1.2.0
 
 Update the version number in:
 
