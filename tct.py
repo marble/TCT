@@ -171,14 +171,15 @@ def cli(toolchains_home, config, verbose, temp_home, cfg_file, active_section):
         )[0]
 
 
-def dump_params(facts):
+def dump_params(facts, stop=True):
     click.echo(data2json(facts))
-    sys.exit()
+    if stop:
+        sys.exit()
 
 
-def possibly_dump_params():
+def possibly_dump_params(stop=True):
     if FACTS["dump_params"]:
-        dump_params(FACTS)
+        dump_params(FACTS, stop)
 
 
 @cli.command()
@@ -187,7 +188,7 @@ def list(dump_params):
     """List available toolchains."""
 
     FACTS["dump_params"] = dump_params
-    possibly_dump_params()
+    possibly_dump_params(stop=False)
     verbose = FACTS["verbose"]
     if verbose:
         print("Toolchains in TOOLCHAINS_HOME ('%s'):" % FACTS["toolchains_home"])
@@ -336,7 +337,7 @@ def run(
     milestonesfile = os.path.join(workdir_home, "milestones.json")
     binabspath = FACTS["binabspath"]
 
-    possibly_dump_params()
+    possibly_dump_params(stop=False)
 
     if clean_but is not None:
         parts = FACTS["toolchain_temp_home"].split("/")
