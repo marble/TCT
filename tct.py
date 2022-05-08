@@ -303,6 +303,12 @@ def clean(dump_params, yes):
     ),
 )
 @click.option(
+    "--hto",
+    multiple=True,
+    metavar="KEY=VAL",
+    help="Define or override a 'html_theme_option' used by Sphinx (repeatable)",
+)
+@click.option(
     "--toolchain-help",
     is_flag=True,
     help="Tell the toolchain to display its help text. "
@@ -317,7 +323,7 @@ def clean(dump_params, yes):
 )
 @click.option("--dump-params", "-D", is_flag=True, help="Dump parameters and exit.")
 def run(
-    toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but, dump_params
+    toolchain, config, dry_run, hto, toolchain_help, toolchain_action, clean_but, dump_params
 ):
     """Run a toolchain.
 
@@ -368,9 +374,11 @@ def run(
         tempname=tempname,
         workdir_home=workdir_home,
     )
-    for key, value in config:
-        FACTS["run_command"][key] = value
-
+    if config:
+        for key, value in config:
+            FACTS["run_command"][key] = value
+    if hto:
+        FACTS["run_command"]["hto"] = [v for v in hto]
     FACTS["tctconfig"] = {}
     for section in tctconfig.sections():
         FACTS["tctconfig"][section] = FACTS["tctconfig"].get(section, {})
