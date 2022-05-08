@@ -19,7 +19,7 @@ import time
 from tctlib import *
 import six
 
-__VERSION__ = "1.2-dev"
+__VERSION__ = "1.3.0"
 
 PY3 = sys.version_info[0] == 3
 
@@ -171,14 +171,15 @@ def cli(toolchains_home, config, verbose, temp_home, cfg_file, active_section):
         )[0]
 
 
-def dump_params(facts):
+def dump_params(facts, stop=True):
     click.echo(data2json(facts))
-    sys.exit()
+    if stop:
+        sys.exit()
 
 
-def possibly_dump_params():
+def possibly_dump_params(stop=True):
     if FACTS["dump_params"]:
-        dump_params(FACTS)
+        dump_params(FACTS, stop)
 
 
 @cli.command()
@@ -187,7 +188,7 @@ def list(dump_params):
     """List available toolchains."""
 
     FACTS["dump_params"] = dump_params
-    possibly_dump_params()
+    possibly_dump_params(stop=False)
     verbose = FACTS["verbose"]
     if verbose:
         print("Toolchains in TOOLCHAINS_HOME ('%s'):" % FACTS["toolchains_home"])
@@ -302,6 +303,12 @@ def clean(dump_params, yes):
     ),
 )
 @click.option(
+    "--hto",
+    multiple=True,
+    metavar="KEY=VAL",
+    help="Define or override a 'html_theme_option' used by Sphinx (repeatable)",
+)
+@click.option(
     "--toolchain-help",
     is_flag=True,
     help="Tell the toolchain to display its help text. "
@@ -316,7 +323,7 @@ def clean(dump_params, yes):
 )
 @click.option("--dump-params", "-D", is_flag=True, help="Dump parameters and exit.")
 def run(
-    toolchain, config, dry_run, toolchain_help, toolchain_action, clean_but, dump_params
+    toolchain, config, dry_run, hto, toolchain_help, toolchain_action, clean_but, dump_params
 ):
     """Run a toolchain.
 
@@ -336,7 +343,7 @@ def run(
     milestonesfile = os.path.join(workdir_home, "milestones.json")
     binabspath = FACTS["binabspath"]
 
-    possibly_dump_params()
+    possibly_dump_params(stop=False)
 
     if clean_but is not None:
         parts = FACTS["toolchain_temp_home"].split("/")
@@ -367,9 +374,11 @@ def run(
         tempname=tempname,
         workdir_home=workdir_home,
     )
-    for key, value in config:
-        FACTS["run_command"][key] = value
-
+    if config:
+        for key, value in config:
+            FACTS["run_command"][key] = value
+    if hto:
+        FACTS["run_command"]["hto"] = [v for v in hto]
     FACTS["tctconfig"] = {}
     for section in tctconfig.sections():
         FACTS["tctconfig"][section] = FACTS["tctconfig"].get(section, {})
